@@ -1,46 +1,43 @@
 ---
-description: Fuel-Pro v4 — hard project invariants
+description: Fuel-Pro — hard project invariants
 globs:
   - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
   - "**/*.scss"
-  - "**/*.html"
   - "**/*.css"
 alwaysApply: true
 ---
 
-# Fuel-Pro v4 (`4.0.0`)
+# Fuel-Pro (React)
 
-Admin dashboard template by Colorlib. Server-rendered HTML in [production/](mdc:production), **Vanilla ES2022**, SCSS only, no Bootstrap JS, no jQuery, no SPA framework. Heavyweight deps are lazy-imported per page.
+Multi-tenant fuel-station admin app. **React 18 + Vite + react-router-dom**, vanilla **SCSS** (the reused Colorlib theme). No Bootstrap, no jQuery, no Tailwind/PostCSS, no extra state library. Pages render mock data from `src/data/mock/`; real endpoints go through `src/api/`.
 
 Keep this always-applied rule small. Use project skills for detail:
 
-- `token-lean-workflow` - token-conscious search, editing, verification, and summaries.
-- `fuel-pro-recipes` - file map, page/chart/module recipes, overlay snippets, and common commands.
+- `token-lean-workflow` — token-conscious search, editing, verification, summaries.
+- `fuel-pro-recipes` — file map and recipes (pages, CRUD, forms, API, RBAC, overlays) + commands.
 
 ## Hard rules
 
-- **Vanilla DOM only.** `querySelector`, `classList`, `addEventListener`. Never add jQuery, Bootstrap JS, or an SPA framework.
-- **Single entry**: [src/main-v4.js](mdc:src/main-v4.js). Every page loads it. Page-specific modules are lazy-imported inside `main-v4.js` guarded by DOM presence — match that pattern, don't add new `<script>` tags per page.
-- **Pages are auto-discovered.** Drop `production/<slug>.html` in and `discoverEntries()` in [vite.config.js](mdc:vite.config.js) picks it up. Don't edit `rollupOptions.input`.
-- **Shell opt-in via body attributes**: `<body data-shell="admin" data-page="<key>" data-breadcrumb="Home > …">`. The Vite plugin (`shellInjectionPlugin` in [vite.config.js](mdc:vite.config.js)) inlines sidebar/topbar/footer at build time so the shell paints on the first frame.
-- **NAV is one constant**: `NAV` in [src/v4/shell-render.js](mdc:src/v4/shell-render.js), 7 groups. Match leaf `key` to `data-page`. New icons go in the `ICONS` object in the same file (inline SVG, `currentColor` stroke).
-- **Overlays go through helpers**: `showModal()` ([src/v4/modal.js](mdc:src/v4/modal.js)), `showToast()` ([src/v4/toast.js](mdc:src/v4/toast.js)), `openMenu()` / `openPanel()` ([src/v4/menus.js](mdc:src/v4/menus.js)). Never hand-roll a backdrop, escape handler, or focus-return loop.
-- **CSS custom properties for colors**, never hex literals in components. Tokens in [src/scss/v4/_tokens.scss](mdc:src/scss/v4/_tokens.scss). Charts read them via `getComputedStyle(document.documentElement).getPropertyValue('--…')` — that's how dark-mode redraw stays automatic.
-- **Lazy ECharts imports.** Match the modular import pattern in [src/v4/charts.js](mdc:src/v4/charts.js). Don't `import * as echarts`.
-- **Subpath-safe URLs.** `import.meta.env.BASE_URL` in JS, `${base}` in the Vite plugin, relative paths inside `production/*.html`. Never hard-code a leading `/`.
-- **Idempotent `init<Name>()` exports.** Every module in `src/v4/` exposes a single `init*()` that is safe to call when its root element is absent and safe to call twice.
-- **No `console.*` in shipped code.** Terser drops them in production but ESLint flags them earlier.
-- **Service worker only in prod.** Skip the registration when `import.meta.env.DEV` — see the guard in [src/main-v4.js](mdc:src/main-v4.js).
+- **Entry & routes.** [src/main.jsx](mdc:src/main.jsx) mounts `BrowserRouter → AuthProvider → App`. All routes live in [src/App.jsx](mdc:src/App.jsx); protected pages sit under `<RequireAuth><AdminLayout/></RequireAuth>` and are wrapped `guard('<module>:view', <Page/>)`.
+- **Folder-per-page.** Each page is `src/pages/<Module>/<Page>/index.jsx` with its subcomponents (`columns.jsx`, `tabs.jsx`) beside it.
+- **Reuse, don't hand-roll.** Build lists/forms/overlays from `src/components/crud/*` (`ResourcePage`, `DataTable`, `FormModal`, `FormField`, `FilterBar`, `ConfirmDialog`, `SummaryCard`, `StatusBadge`, `Tabs`, `Dropdown`, `ExportButtons`) and `src/components/*` (`Modal`, `PageHeader`, `Icon`). Toasts via `showToast` from [src/v4/toast.js](mdc:src/v4/toast.js).
+- **All backend calls go through the API client.** Import `api` from [src/api/client.js](mdc:src/api/client.js) and put one module per resource in `src/api/`. The base URL lives only in [src/api/config.js](mdc:src/api/config.js) (`VITE_API_BASE_URL`). Never hard-code a backend URL elsewhere. The client auto-attaches the `fp_token` Bearer header and throws on non-2xx / network errors.
+- **RBAC everywhere.** Gate routes with `ProtectedRoute perm="<module>:<action>"`, check with `can()` from `useAuth()`, and use `<Can>` for inline UI. The permission matrix is [src/domain/permissions.js](mdc:src/domain/permissions.js).
+- **NAV is one constant**: `NAV` in [src/data/nav.js](mdc:src/data/nav.js). Each leaf's `module` matches its route perm. New icons → `Icon` map in [src/components/Icon.jsx](mdc:src/components/Icon.jsx) (inline SVG, `currentColor`).
+- **Colors via CSS custom properties** in [src/scss/_tokens.scss](mdc:src/scss/_tokens.scss); never hex literals in components (keeps dark mode working).
+- **Subpath-safe URLs.** Use `import.meta.env.BASE_URL` for asset paths; never hard-code a leading `/`.
+- **Idempotent, guarded components.** Pages/components must render safely when their data is absent (loading/empty states).
+- **No `console.*` in shipped code.**
 
 ## Anti-patterns
 
-- Don't add jQuery, Bootstrap, or a SPA framework.
-- Don't write Vite entry input lists by hand — drop the file in `production/`, it's auto-discovered.
-- Don't add `<script>` tags to individual `production/*.html` files for new modules — lazy-import from `src/main-v4.js` instead.
-- Don't bypass `mountShell()` to render your own sidebar/topbar.
-- Don't `new bootstrap.Modal(...)` — there is no Bootstrap.
-- Don't hard-code paths beginning with `/` in JS or HTML — use `BASE_URL` / relative paths.
-- Don't edit `dist/`, `node_modules/`, or `docs/screenshots/`.
-- Don't introduce PostCSS, Tailwind, or any pipeline besides Vite.
-- Don't import all of ECharts — match the modular pattern in [src/v4/charts.js](mdc:src/v4/charts.js).
-- Don't use hex colors in components — refer to CSS custom properties.
+- Don't add jQuery, Bootstrap, Tailwind, PostCSS, or a state library.
+- Don't hand-roll tables, forms, modals, or toasts — use the `crud` components.
+- Don't `fetch()` a hard-coded backend URL — use the `api` client + `src/api/config.js`.
+- Don't put a protected page outside `RequireAuth` / `ProtectedRoute`.
+- Don't break folder-per-page (no flat `src/pages/Foo.jsx` for new pages).
+- Don't use hex colors in components — use the `--token` CSS variables.
+- Don't edit `dist/`, `node_modules/`, or generated output.

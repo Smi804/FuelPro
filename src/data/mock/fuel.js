@@ -51,46 +51,49 @@ export const AUDIT_STATUS = {
   failed: { label: 'Failed', cls: 'status-red' }
 };
 
-// Invoice reconciliation audits — each row compares the supplier invoice
-// against four independent sources (ATG delivery, manual hand-tag dip,
-// supplier quotation and the bank statement). `inv` is the invoice figure,
-// `src` is the figure measured by that source. ATG / hand tag are litres;
-// quotation / bank statement are currency.
+// Invoice payment status used by the audit table.
+export const AUDIT_PAY_STATUS = {
+  paid: { label: 'Paid', cls: 'status-green' },
+  unpaid: { label: 'Unpaid', cls: 'status-yellow' },
+  cancelled: { label: 'Cancelled', cls: 'status-red' },
+  returned: { label: 'Returned', cls: 'status-blue' }
+};
+
+// Invoice reconciliation audits. Each row lets the user verify three things at a
+// glance: (1) the invoice Amount matches the day's quote (gallons × dayQuote),
+// (2) the invoice Quality matches the quality on the BOL, and (3) the amount the
+// bank actually debited matches the invoice amount. `dayQuote` is $/gal for the
+// row's grade; `debited` is what cleared the bank (0 when not yet debited).
 export const FUEL_AUDITS = [
   {
-    id: 'fa_1', srNo: 1, stationId: 'st_1', stationName: 'Riverside Fuel Center',
-    invoiceDate: '2026-06-20', deliveryDateTime: '2026-06-20 14:30', invoiceNumber: 'PI-8801',
-    amount: 16080, vendor: 'BalticOil Wholesale',
-    atg: { inv: 12000, src: 11960 }, handTag: { inv: 12000, src: 12000 },
-    quotation: { inv: 16080, src: 16080 }, stmt: { inv: 16080, src: 16080 }
+    id: 'fa_1', date: '2026-06-20', invoiceNumber: 'INV-8801', dueDate: '2026-07-05', vendor: 'Synergy', stationName: 'Los Gatos',
+    grade: 'diesel', gallons: 8000, quality: 'Diesel #2 ULSD', bolQuality: 'Diesel #2 ULSD',
+    dayQuote: 4.25, amount: 34000, debited: 34000, paymentType: 'EFT', paymentTerms: 'Net 15', paymentStatus: 'paid'
   },
   {
-    id: 'fa_2', srNo: 2, stationId: 'st_1', stationName: 'Riverside Fuel Center',
-    invoiceDate: '2026-06-20', deliveryDateTime: '2026-06-20 16:10', invoiceNumber: 'PI-8802',
-    amount: 12800, vendor: 'BalticOil Wholesale',
-    atg: { inv: 10000, src: 9820 }, handTag: { inv: 10000, src: 9990 },
-    quotation: { inv: 12800, src: 12800 }, stmt: { inv: 12800, src: 12800 }
+    id: 'fa_2', date: '2026-06-19', invoiceNumber: 'INV-8802', dueDate: '2026-07-04', vendor: 'Synergy', stationName: 'Mountain View',
+    grade: 'regular', gallons: 9000, quality: 'Regular 87', bolQuality: 'Regular 87',
+    dayQuote: 3.45, amount: 31500, debited: 0, paymentType: 'EFT', paymentTerms: 'Net 15', paymentStatus: 'unpaid'
   },
   {
-    id: 'fa_3', srNo: 3, stationId: 'st_2', stationName: 'Highway 7 Station',
-    invoiceDate: '2026-06-12', deliveryDateTime: '2026-06-12 09:45', invoiceNumber: 'PI-8803',
-    amount: 23760, vendor: 'NordFuel Supply',
-    atg: { inv: 18000, src: 17280 }, handTag: { inv: 18000, src: 17350 },
-    quotation: { inv: 23760, src: 23200 }, stmt: { inv: 23760, src: 23760 }
+    id: 'fa_3', date: '2026-06-18', invoiceNumber: 'INV-8803', dueDate: '2026-07-18', vendor: 'Chevron', stationName: 'Santa Clara',
+    grade: 'premium', gallons: 5000, quality: 'Premium 91', bolQuality: 'Plus 89',
+    dayQuote: 4.05, amount: 20250, debited: 20250, paymentType: 'ACH', paymentTerms: 'Net 30', paymentStatus: 'paid'
   },
   {
-    id: 'fa_4', srNo: 4, stationId: 'st_2', stationName: 'Highway 7 Station',
-    invoiceDate: '2026-06-23', deliveryDateTime: '2026-06-23 11:20', invoiceNumber: 'PI-8804',
-    amount: 5280, vendor: 'EuroGas Partners',
-    atg: { inv: 6000, src: 6000 }, handTag: { inv: 6000, src: 6005 },
-    quotation: { inv: 5280, src: 5280 }, stmt: { inv: 5280, src: 0 }
+    id: 'fa_4', date: '2026-06-17', invoiceNumber: 'INV-8804', dueDate: '2026-07-01', vendor: 'Valero', stationName: 'Sunnyvale',
+    grade: 'plus', gallons: 6000, quality: 'Plus 89', bolQuality: 'Plus 89',
+    dayQuote: 3.79, amount: 22740, debited: 22340, paymentType: 'EFT', paymentTerms: 'Net 14', paymentStatus: 'paid'
   },
   {
-    id: 'fa_5', srNo: 5, stationId: 'st_3', stationName: 'Old Town Petrol',
-    invoiceDate: '2026-06-18', deliveryDateTime: '2026-06-18 15:05', invoiceNumber: 'PI-8805',
-    amount: 11680, vendor: 'PetroLink Distribution',
-    atg: { inv: 8000, src: 7960 }, handTag: { inv: 8000, src: 8000 },
-    quotation: { inv: 11680, src: 11680 }, stmt: { inv: 11680, src: 11680 }
+    id: 'fa_5', date: '2026-06-15', invoiceNumber: 'INV-8805', dueDate: '2026-06-30', vendor: 'Phillips 66', stationName: 'Saratoga',
+    grade: 'regular', gallons: 4000, quality: 'Regular 87', bolQuality: 'Regular 87',
+    dayQuote: 3.48, amount: 13920, debited: 0, paymentType: 'ACH', paymentTerms: 'Net 30', paymentStatus: 'cancelled'
+  },
+  {
+    id: 'fa_6', date: '2026-06-14', invoiceNumber: 'INV-8806', dueDate: '2026-06-29', vendor: 'Valero', stationName: 'Campbell',
+    grade: 'diesel', gallons: 7000, quality: 'Diesel #2', bolQuality: 'Diesel #2',
+    dayQuote: 4.18, amount: 29260, debited: 0, paymentType: 'EFT', paymentTerms: 'Net 15', paymentStatus: 'returned'
   }
 ];
 

@@ -17,14 +17,17 @@ export default function Login() {
 
   if (isAuthenticated) return <Navigate to={from} replace />;
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = login(email, password);
-    setLoading(false);
-    if (res.ok) navigate(from, { replace: true });
-    else setError(res.error);
+    try {
+      const res = await login(email, password);
+      if (res.ok) navigate(from, { replace: true });
+      else setError(res.error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,7 +100,9 @@ export default function Login() {
         </form>
 
         <div className="auth-hint" style={{ marginTop: 14, fontSize: 12.5, color: 'var(--text-muted)', textAlign: 'center' }}>
-          Demo login — <strong>admin@gmail.com</strong> / <strong>admin123</strong>
+          Demo mode — sign in with <strong>admin@gmail.com</strong> / <strong>admin123</strong>
+          <br />
+          (Super Admin: superadmin@gmail.com / admin123)
         </div>
 
         <div className="auth-divider">or continue with</div>

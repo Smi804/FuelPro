@@ -1,97 +1,60 @@
 ---
 name: fuel-pro-recipes
-description: Use when adding Fuel-Pro pages, charts, page modules, overlays, navigation entries, or when looking up common project commands and file locations.
+description: Use when working in the Fuel-Pro React app — adding pages/routes, CRUD list pages, forms, wiring backend APIs, RBAC, navigation, overlays, or looking up file locations and commands.
 ---
 
-# Fuel-Pro Recipes
+# Fuel-Pro Recipes (React)
 
-Load this skill only when the task needs detailed project workflow reminders.
+React 18 + Vite + react-router. Vanilla SCSS (reused theme), no Bootstrap/jQuery/SPA framework. Pages use mock data in `src/data/mock/`; real endpoints go through `src/api/`. Load this skill only when a task needs these specifics.
 
-## File layout
+## Layout
 
-- `src/main-v4.js` - entry; mounts shell, lazy-loads page modules.
-- `src/scss/v4/` - SCSS partials; `main.scss` is the entry.
-- `src/v4/shell.js` - `mountShell()` runtime behavior.
-- `src/v4/shell-render.js` - `NAV`, `ICONS`, and pure shell renderers.
-- `src/v4/charts.js` - `initCharts()` plus ECharts factories.
-- `src/v4/tables.js` - `initTables()` plus DataTables initialization.
-- `src/v4/command-palette.js` - command palette.
-- `src/v4/modal.js`, `src/v4/toast.js`, `src/v4/menus.js` - overlay helpers.
-- `src/v4/inbox.js`, `src/v4/kanban.js`, `src/v4/calendar.js`, `src/v4/settings.js`, `src/v4/file-manager.js` - lazy-loaded page modules.
-- `src/v4/form-controls.js` - date range, multi-select, and rich text controls.
-- `production/` - server-rendered HTML entry pages.
-- `types/Fuel-Pro.d.ts` - public JS surface declarations.
-- `scripts/new-page.mjs` - page scaffolder.
-- `scripts/deploy-preview.sh` - deploy preview helper.
+- `src/main.jsx` — entry: `BrowserRouter` → `AuthProvider` → `App`.
+- `src/App.jsx` — routes. Protected area = `<RequireAuth><AdminLayout/></RequireAuth>`; each route wrapped `guard('<module>:view', <Page/>)` (`ProtectedRoute`).
+- `src/components/` — `AdminLayout`, `Sidebar`, `Topbar`, `Footer`, `Icon`, `Modal`, `PageHeader`, `MiniCharts`, `Toggle`.
+- `src/components/crud/` — `ResourcePage`, `DataTable`, `FormModal`, `FormField`, `FilterBar`, `ConfirmDialog`, `ExportButtons`, `SummaryCard`, `StatusBadge`, `Tabs`, `Dropdown`, `ChartCard`.
+- `src/pages/<Module>/<Page>/index.jsx` — folder-per-page; subcomponents (`columns.jsx`, `tabs.jsx`) beside it.
+- `src/auth/` — `AuthContext` (`useAuth`: `user`, `can`, `login`, `logout`, `setRole`, `stations`, `activeStationId`), `RequireAuth`, `ProtectedRoute`, `Can`, `authApi`.
+- `src/api/` — `config.js` (`API_BASE_URL`, from `VITE_API_BASE_URL`), `client.js` (`api.get/post/put/del`; Bearer `fp_token`; throws on non-2xx + network as `status:0`), one module per resource (e.g. `stations.js`).
+- `src/data/nav.js` — `NAV` groups/items; each leaf has `module` (RBAC) matching a route perm.
+- `src/domain/` — `roles.js`, `permissions.js` (`PERMISSION_MATRIX`, `can()`), `types.ts`.
+- `src/scss/` — partials; `main.scss` entry; `_tokens.scss` theme CSS vars.
+- `src/v4/toast.js` — `showToast(msg, { variant })`.
 
 ## New page
 
-Prefer the scaffolder:
+1. `src/pages/<Module>/<Page>/index.jsx` exporting a default component.
+2. Route in `src/App.jsx`: `<Route path="/x" element={guard('<module>:view', <X/>)} />`.
+3. NAV leaf in `src/data/nav.js` with `module` = the perm prefix; add icon to `src/components/Icon.jsx` if new.
+
+## CRUD list (mock)
+
+Use `ResourcePage`: `perm`, `title`, `data`, `columns`, `formFields`, `filters`, `summary`, `searchKeys`. It handles add/edit/delete, RBAC gating, summary, filters, export.
+
+## CRUD list (real API)
+
+1. `src/api/<resource>.js`: wrap endpoints with `api.*`, map response→UI shape, normalize `{status:'error'}` to a thrown error (`assertOk`). See `src/api/stations.js`.
+2. Page uses `DataTable` in `serverMode` (controlled `page`/`onPageChange`, `sort`/`onSortChange`, `totalRows`, `loading`) + `FormModal` + `ConfirmDialog`. Fetch in a `load()` callback driven by `useEffect`.
+
+## Forms
+
+`FormModal` with a `fields` config. `FormField` types: `text|number|email|tel|date|textarea|select|file|checkbox`. Per-field `required`, `validate(value, values)`, `derive(values)`, `options`, `span`, `accept`, `defaultValue`.
+
+## Overlays & RBAC
+
+- Toast: `import { showToast } from '../../v4/toast.js'`. Modals: `Modal` / `FormModal` / `ConfirmDialog`.
+- Permissions: `const { can } = useAuth(); can('sales:create')`. Routes: `<ProtectedRoute perm="x:view">`. Inline: `<Can permission="x:update">`. Edit the matrix in `src/domain/permissions.js`.
+
+## Theme
+
+Colors via CSS custom properties in `_tokens.scss`; never hard-code hex in components.
+
+## Commands
 
 ```bash
-npm run new -- reports --title "Reports" --nav-group "Admin"
-```
-
-Manual flow:
-
-1. Add `production/<slug>.html`.
-2. Set `<body data-shell="admin" data-page="<slug>" data-breadcrumb="Home > ...">`.
-3. Load the shared entry with `<script type="module" src="/src/main-v4.js"></script>`.
-4. Append a `NAV` leaf in `src/v4/shell-render.js` whose `key` matches `data-page`.
-
-## New chart
-
-1. Add markup like `<div class="card chart-card"><div class="chart" data-chart="<id>"></div></div>`.
-2. Add a matching `case '<id>':` in `initCharts()` in `src/v4/charts.js`.
-3. Read colors from CSS custom properties with `getComputedStyle(document.documentElement).getPropertyValue('--token')`.
-4. Keep ECharts imports modular; do not import the full package namespace.
-
-## New page module
-
-In `src/main-v4.js`, lazy-load by DOM presence:
-
-```js
-if (document.querySelector('.reports-root')) {
-  import('./v4/reports.js').then((m) => m.initReports());
-}
-```
-
-Export a single idempotent `initReports()` from `src/v4/reports.js`.
-
-## Modal and toast
-
-```js
-import { showModal } from './v4/modal.js';
-
-showModal({
-  title: 'Delete project?',
-  body: 'This cannot be undone.',
-  actions: [
-    { label: 'Cancel', variant: 'ghost' },
-    { label: 'Delete', variant: 'danger', action: () => {} },
-  ],
-});
-```
-
-```js
-import { showToast } from './v4/toast.js';
-
-showToast('Saved', { variant: 'success' });
-```
-
-## Common commands
-
-```bash
-npm run dev
+npm run dev      # Vite dev server on :5173
 npm run build
 npm run preview
-npm run lint
-npm run format
-npm run new -- <slug>
-npm run screenshots
-npm run smoke
-npm run analyze
-npm run deploy:preview
 ```
 
-Override the dev port with `PORT=...`. Build under a subpath with `BASE_PATH=/foo/ npm run build`.
+No `lint`/`format` scripts; Prettier config exists (`npx prettier --write <files>`). Use editor diagnostics for linting.

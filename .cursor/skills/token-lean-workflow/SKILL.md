@@ -7,21 +7,20 @@ description: Use for coding, debugging, reviewing, or answering questions in thi
 
 Use the smallest useful context for the task.
 
-## Search and reading
+## Search & read
 
-- Start with targeted file globs or `rg` searches before opening files.
-- Read narrow file ranges when a match is known; avoid loading whole large files unless structure is unknown.
-- Do not inspect generated or dependency output such as `dist/`, `node_modules/`, or `docs/screenshots/` unless the task explicitly needs it.
-- Reuse this project's always-applied rules instead of restating them in responses.
+- Target with globs / `rg` / semantic search before opening files; read narrow ranges when the match is known.
+- Don't re-read files already in context, and skip generated output (`dist/`, `node_modules/`, `docs/screenshots/`) unless required.
+- Lean on always-applied rules and the `fuel-pro-recipes` skill instead of restating project facts.
 
-## Implementation
+## Implement
 
-- Prefer small, local edits that follow nearby patterns.
-- Add new abstractions only when they remove meaningful duplication or match an existing project pattern.
-- Keep verification focused on the changed surface area; broaden only when touching shared behavior.
+- Prefer small, local edits that follow nearby patterns; reuse `src/components/crud/*` and `src/api/*` rather than hand-rolling.
+- Add abstractions only to remove real duplication or match an existing pattern.
+- Verify the changed surface only (lint the files you touched); broaden only when editing shared code.
 
-## Communication
+## Communicate
 
-- Keep progress updates brief and specific.
-- Summarize outcomes, tests, and residual risks without dumping large diffs or file contents.
-- Ask for clarification only when the next safe action is genuinely blocked.
+- Keep progress notes brief and specific; summarize outcomes and residual risks, not large diffs or file dumps.
+- Batch independent tool calls in one turn.
+- Ask only when the next safe action is genuinely blocked.

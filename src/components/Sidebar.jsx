@@ -4,12 +4,37 @@ import { NAV } from '../data/nav.js';
 import Icon from './Icon.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { ROLE_LABEL } from '../domain/roles.js';
+import { isModuleEnabled } from '../domain/permissions.js';
 
 const Chevron = () => (
   <svg className="nav-chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
     <path d="M6 4l4 4-4 4" />
   </svg>
 );
+
+const LockIcon = () => (
+  <svg className="nav-lock" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <rect x="3" y="7" width="10" height="6" rx="1.5" />
+    <path d="M5 7V5a3 3 0 016 0v2" />
+  </svg>
+);
+
+// True when the item (or any descendant leaf) maps to an unlocked module.
+function hasUnlocked(item) {
+  return item.children ? item.children.some(hasUnlocked) : isModuleEnabled(item.module);
+}
+
+// A non-navigable, greyed row with a lock icon.
+function LockedRow({ item, depth }) {
+  const cls = (depth === 0 ? 'nav-link' : 'nav-sublink') + ' nav-locked';
+  return (
+    <span className={cls} aria-disabled="true" title="Locked">
+      {depth === 0 && <Icon name={item.icon} />}
+      <span className="nav-text">{item.text}</span>
+      <LockIcon />
+    </span>
+  );
+}
 
 // True if `pathname` matches any (possibly nested) leaf under these items.
 function containsActive(items, pathname) {
@@ -23,6 +48,7 @@ function containsActive(items, pathname) {
 // `.nav-sublink`s.
 function NavNode({ item, pathname, depth }) {
   if (!item.children) {
+    if (!isModuleEnabled(item.module)) return <LockedRow item={item} depth={depth} />;
     const cls = depth === 0 ? 'nav-link' : 'nav-sublink';
     return (
       <NavLink to={item.to} end={item.to === '/'} className={({ isActive }) => cls + (isActive ? ' active' : '')}>
@@ -32,6 +58,8 @@ function NavNode({ item, pathname, depth }) {
       </NavLink>
     );
   }
+  // Fully-locked branch (no unlocked descendant) → show one locked row.
+  if (!hasUnlocked(item)) return <LockedRow item={item} depth={depth} />;
   return <NavTree item={item} pathname={pathname} depth={depth} />;
 }
 

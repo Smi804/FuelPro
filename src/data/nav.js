@@ -14,7 +14,7 @@ export const NAV = [
         icon: 'fuel',
         children: [
           { key: 'station-list', to: '/stations', text: 'Station List', module: 'stations' },
-          { key: 'station-details', to: '/stations/st_1', text: 'Station Details', module: 'stations' }
+          { key: 'station-details', to: '/stations/current', text: 'Station Details', module: 'stations' }
         ]
       },
       {
@@ -47,6 +47,13 @@ export const NAV = [
           { key: 'shift-reports', to: '/shifts/reports', text: 'Shift Reports', module: 'shifts' }
         ]
       }
+    ]
+  },
+  {
+    label: 'Catalog',
+    items: [
+      { key: 'items', to: '/items', text: 'Items', icon: 'inventory', module: 'items' },
+      { key: 'brands', to: '/brands', text: 'Brands', icon: 'tag', module: 'brands' }
     ]
   },
   {

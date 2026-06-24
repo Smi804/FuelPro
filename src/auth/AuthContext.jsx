@@ -1,32 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { can as canDo } from '../domain/permissions.js';
-import { ROLES } from '../domain/roles.js';
-import { STATIONS } from '../data/mock/stations.js';
+import { getStationsDropDown } from '../api/stations.js';
+import { loginRequest, adminLoginRequest } from './authApi.js';
 
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = 'fp_token';
 const USER_KEY = 'fp_user';
+const STATION_KEY = 'fp_station';
 
-// Dummy accounts for the demo login. Swap this out for a real auth API later —
-// `login()` is the only thing that needs to change.
-const ACCOUNTS = [
-  {
-    email: 'admin@gmail.com',
-    password: 'admin123',
-    user: { id: 'u_1', name: 'Admin', email: 'admin@gmail.com', role: ROLES.SUPER_ADMIN, stationIds: [], avatarColor: 'var(--primary)' }
-  },
-  {
-    email: 'owner@gmail.com',
-    password: 'owner123',
-    user: { id: 'u_2', name: 'Aigars Silkalns', email: 'owner@gmail.com', role: ROLES.BUSINESS_OWNER, stationIds: [], avatarColor: 'var(--primary)' }
-  },
-  {
-    email: 'manager@gmail.com',
-    password: 'manager123',
-    user: { id: 'u_3', name: 'Sarah Kowalski', email: 'manager@gmail.com', role: ROLES.STATION_MANAGER, stationIds: ['st_1'], avatarColor: 'var(--primary)' }
+function readStoredStation() {
+  try {
+    return localStorage.getItem(STATION_KEY) || 'all';
+  } catch {
+    return 'all';
   }
-];
+}
 
 function readStoredUser() {
   try {
@@ -40,9 +29,20 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStoredUser);
-  const [activeStationId, setActiveStationId] = useState('all');
+  const [activeStationId, setActiveStationId] = useState(readStoredStation);
+  const [stations, setStations] = useState([]);
 
-  // Keep storage in sync with the in-memory user (e.g. after a role switch).
+  // Persist the active station so it survives reloads and the API client can
+  // attach it (Station-Id header) to every request.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STATION_KEY, activeStationId);
+    } catch {
+      /* storage unavailable — ignore */
+    }
+  }, [activeStationId]);
+
+  // Keep the stored user in sync with memory (e.g. after a role switch).
   useEffect(() => {
     try {
       if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -52,27 +52,78 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  // The stations this user may access (owners/super admins see all).
-  const stations = useMemo(() => {
-    if (!user || !user.stationIds?.length) return STATIONS;
-    return STATIONS.filter((s) => user.stationIds.includes(s.id));
+  // The stations this user may access — fetched from the backend (scoped to the
+  // authenticated user by the token). Cleared on logout.
+  useEffect(() => {
+    if (!user) {
+      setStations([]);
+      return;
+    }
+    let cancelled = false;
+    getStationsDropDown()
+      .then((list) => {
+        if (!cancelled) setStations(list.map((s) => ({ id: s.value, name: s.label, code: s.code })));
+      })
+      .catch(() => {
+        if (!cancelled) setStations([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  const login = useCallback((email, password) => {
-    const match = ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === String(email).trim().toLowerCase() && a.password === password
-    );
-    if (!match) return { ok: false, error: 'Invalid email or password.' };
+  const persistSession = useCallback((token, nextUser) => {
     try {
-      localStorage.setItem(TOKEN_KEY, `demo-${match.user.id}-${Date.now()}`);
-      localStorage.setItem(USER_KEY, JSON.stringify(match.user));
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     } catch {
       /* ignore */
     }
-    setUser(match.user);
+    setUser(nextUser);
     setActiveStationId('all');
-    return { ok: true };
   }, []);
+
+  /**
+   * Sign in. Tries the regular endpoint first; if that rejects (e.g. the
+   * account is a Super Admin), falls back to the admin endpoint. Mirrors the
+   * controller's validation client-side and surfaces blocking 403 messages.
+   * @returns {Promise<{ ok: boolean, error?: string }>}
+   */
+  const login = useCallback(
+    async (email, password) => {
+      const mail = String(email || '').trim();
+      if (!/^[^@]+@[^@]+\.[^@]+$/.test(mail)) return { ok: false, error: 'Please enter a valid email address.' };
+      if (!password || password.length < 5 || password.length > 50) {
+        return { ok: false, error: 'Password must be between 5 and 50 characters.' };
+      }
+
+      // 1) Regular user login (Admin / Sales).
+      try {
+        const { token, user: u } = await loginRequest(mail, password);
+        persistSession(token, u);
+        return { ok: true };
+      } catch (err) {
+        if (err.status === 0) return { ok: false, error: 'Cannot reach the server. Check your connection.' };
+        // A blocking business rule returns 403 *with* a token (deactivated /
+        // subscription expired / awaiting admin approval) — don't try admin.
+        if (err.status === 403 && err.data?.token) {
+          return { ok: false, error: err.data.message || 'Your account cannot sign in right now.' };
+        }
+        // Otherwise it's likely a Super Admin (or bad creds) → try admin login.
+      }
+
+      // 2) Super Admin login.
+      try {
+        const { token, user: u } = await adminLoginRequest(mail, password);
+        persistSession(token, u);
+        return { ok: true };
+      } catch (err) {
+        if (err.status === 0) return { ok: false, error: 'Cannot reach the server. Check your connection.' };
+        return { ok: false, error: err.data?.message || 'Invalid email or password.' };
+      }
+    },
+    [persistSession]
+  );
 
   const logout = useCallback(() => {
     try {

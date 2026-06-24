@@ -1,10 +1,15 @@
 import { useAuth } from './AuthContext.jsx';
+import { isModuleEnabled } from '../domain/permissions.js';
 
-// Route-level authorization. Renders the page when the user holds `perm`,
-// otherwise shows a consistent, theme-styled "access denied" panel.
+// Route-level authorization. Renders the page when the user holds `perm` and the
+// module isn't locked; otherwise shows a consistent, theme-styled panel.
 export default function ProtectedRoute({ perm, children }) {
   const { can } = useAuth();
-  if (perm && !can(perm)) {
+  const module = perm?.split(':')[0];
+  const locked = module && !isModuleEnabled(module);
+  const denied = perm && !can(perm);
+
+  if (locked || denied) {
     return (
       <div className="page-wrapper">
         <div className="card" style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center' }}>
@@ -15,10 +20,11 @@ export default function ProtectedRoute({ perm, children }) {
                 <path d="M8 10V7a4 4 0 018 0v3" />
               </svg>
             </div>
-            <h2 className="page-title" style={{ fontSize: 18 }}>Access denied</h2>
+            <h2 className="page-title" style={{ fontSize: 18 }}>{locked ? 'Page locked' : 'Access denied'}</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>
-              Your role doesn’t have permission to view this page. Contact an administrator if you
-              believe this is a mistake.
+              {locked
+                ? 'This page is locked in the current configuration.'
+                : 'Your role doesn’t have permission to view this page. Contact an administrator if you believe this is a mistake.'}
             </p>
           </div>
         </div>

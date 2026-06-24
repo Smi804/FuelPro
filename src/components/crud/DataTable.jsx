@@ -69,17 +69,33 @@ export default function DataTable({
   toolbar,
   enableColumnToggle = true,
   selectable = true,
-  emptyText = 'No records found.'
+  emptyText = 'No records found.',
+  // ── Server-side (controlled) mode ───────────────────────────────
+  // When `serverMode` is true the table renders `rows` as-is and delegates
+  // paging/sorting to the parent via the controlled props below. Search and
+  // client-side filtering/sorting are bypassed. Defaults keep the original
+  // client-side behavior for every existing caller.
+  serverMode = false,
+  totalRows,
+  page: pageProp,
+  onPageChange,
+  sort: sortProp,
+  onSortChange,
+  loading = false
 }) {
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState({ key: null, dir: 'asc' });
-  const [page, setPage] = useState(0);
+  const [sortState, setSortState] = useState({ key: null, dir: 'asc' });
+  const [pageState, setPageState] = useState(0);
   const [selected, setSelected] = useState(() => new Set());
   const [hidden, setHidden] = useState(() => new Set());
+
+  const sort = serverMode ? sortProp || { key: null, dir: 'asc' } : sortState;
+  const page = serverMode ? pageProp || 0 : pageState;
 
   const visibleColumns = columns.filter((c) => !hidden.has(c.key));
 
   const filtered = useMemo(() => {
+    if (serverMode) return rows;
     const q = query.trim().toLowerCase();
     let out = rows;
     if (q && searchKeys) {
@@ -94,14 +110,21 @@ export default function DataTable({
       });
     }
     return out;
-  }, [rows, query, sort, searchKeys]);
+  }, [rows, query, sort, searchKeys, serverMode]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const total = serverMode ? totalRows ?? rows.length : filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, pageCount - 1);
-  const pageRows = filtered.slice(safePage * pageSize, safePage * pageSize + pageSize);
+  const pageRows = serverMode ? rows : filtered.slice(safePage * pageSize, safePage * pageSize + pageSize);
 
-  const toggleSort = (key) =>
-    setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
+  const setPage = (i) => (serverMode ? onPageChange?.(i) : setPageState(i));
+  const toggleSort = (key) => {
+    if (serverMode) {
+      onSortChange?.(key);
+      return;
+    }
+    setSortState((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
+  };
 
   const allOnPageSelected = pageRows.length > 0 && pageRows.every((r) => selected.has(getRowId(r)));
   const toggleAll = () =>
@@ -127,7 +150,7 @@ export default function DataTable({
           <div>
             {title && <div className="card-title">{title}</div>}
             <div className="card-subtitle">
-              {selected.size > 0 ? `${selected.size} selected` : subtitle || `${filtered.length} records`}
+              {selected.size > 0 ? `${selected.size} selected` : subtitle || `${total} records`}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -217,7 +240,14 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((row) => {
+            {loading && (
+              <tr>
+                <td colSpan={colSpan} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+                  Loading…
+                </td>
+              </tr>
+            )}
+            {!loading && pageRows.map((row) => {
               const id = getRowId(row);
               return (
                 <tr key={id}>
@@ -239,7 +269,7 @@ export default function DataTable({
                 </tr>
               );
             })}
-            {pageRows.length === 0 && (
+            {!loading && pageRows.length === 0 && (
               <tr>
                 <td colSpan={colSpan} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
                   {emptyText}
@@ -252,8 +282,8 @@ export default function DataTable({
 
       <div className="card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
-          Showing {filtered.length === 0 ? 0 : safePage * pageSize + 1}–
-          {Math.min(filtered.length, safePage * pageSize + pageSize)} of {filtered.length}
+          Showing {total === 0 ? 0 : safePage * pageSize + 1}–
+          {Math.min(total, safePage * pageSize + pageSize)} of {total}
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn btn-outline btn-sm" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>

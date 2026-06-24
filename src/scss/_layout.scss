@@ -185,6 +185,18 @@
 .nav-toggle:hover .nav-chev { opacity: 0.9; }
 .nav-tree.open > .nav-toggle .nav-chev { transform: rotate(90deg); opacity: 1; }
 
+// Locked nav rows — visible but non-navigable, with a trailing lock glyph.
+.nav-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.nav-lock {
+  margin-left: auto;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
 // When the active page lives inside a tree, give the parent a subtle accent
 // even when the tree is collapsed, so the user knows "they're in this group".
 .nav-tree.has-active > .nav-toggle {

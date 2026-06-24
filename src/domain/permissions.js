@@ -8,10 +8,32 @@ import { ROLES } from './roles.js';
 
 export const ACTIONS = ['view', 'create', 'update', 'delete', 'export', 'approve'];
 
+// ── Module lock ────────────────────────────────────────────────────────────
+// When non-null, only these modules are unlocked: everything else is shown
+// locked in the sidebar and blocked at the route level (independent of role).
+// Set ENABLED_MODULES = null to unlock every module again.
+export const ENABLED_MODULES = new Set([
+  'dashboard',
+  'stations',
+  // Fuel Inventory subtree (overview / purchasing / audits / reports / settings)
+  'fuel_inventory',
+  'items',
+  'brands',
+  'purchase_invoices',
+  'fuel_audits',
+  'fuel_audit_config',
+  'invoice_entry_service'
+]);
+
+/** Whether a module is currently unlocked (true when no lock is configured). */
+export const isModuleEnabled = (module) => ENABLED_MODULES === null || ENABLED_MODULES.has(module);
+
 // All modules, grouped for the permission matrix UI.
 export const MODULES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'stations', label: 'Stations' },
+  { key: 'items', label: 'Items' },
+  { key: 'brands', label: 'Brands' },
   { key: 'sales', label: 'Sales' },
   { key: 'invoices', label: 'Invoices' },
   { key: 'meter_readings', label: 'Meter Readings' },
@@ -52,7 +74,7 @@ const CRUD_EXPORT = ['view', 'create', 'update', 'delete', 'export'];
 // module -> actions for each role (super_admin omitted; gets all).
 export const PERMISSION_MATRIX = {
   [ROLES.BUSINESS_OWNER]: {
-    dashboard: READ, stations: CRUD_EXPORT, sales: READ_EXPORT, invoices: READ_EXPORT,
+    dashboard: READ, stations: CRUD_EXPORT, items: CRUD_EXPORT, brands: CRUD_EXPORT, sales: READ_EXPORT, invoices: READ_EXPORT,
     meter_readings: READ, products: CRUD_EXPORT, tanks: READ_EXPORT, pumps: READ_EXPORT,
     stock_entries: READ_EXPORT, stock_transfers: CRUD_EXPORT, customers: CRUD_EXPORT,
     suppliers: CRUD_EXPORT, employees: CRUD_EXPORT, shifts: READ_EXPORT, expenses: CRUD_EXPORT,
@@ -62,7 +84,7 @@ export const PERMISSION_MATRIX = {
     purchase_invoices: CRUD_EXPORT, fuel_audits: CRUD_EXPORT, fuel_audit_config: CRUD_EXPORT, invoice_entry_service: CRUD_EXPORT
   },
   [ROLES.STATION_MANAGER]: {
-    dashboard: READ, stations: READ_EXPORT, sales: CRUD_EXPORT, invoices: CRUD_EXPORT,
+    dashboard: READ, stations: READ_EXPORT, items: CRUD_EXPORT, brands: READ, sales: CRUD_EXPORT, invoices: CRUD_EXPORT,
     meter_readings: CRUD, products: READ, tanks: CRUD_EXPORT, pumps: CRUD_EXPORT,
     stock_entries: CRUD_EXPORT, stock_transfers: ['view', 'create', 'approve'], customers: CRUD_EXPORT,
     suppliers: READ_EXPORT, employees: CRUD_EXPORT, shifts: ['view', 'create', 'update', 'approve', 'export'],
@@ -73,7 +95,7 @@ export const PERMISSION_MATRIX = {
     fuel_audit_config: READ, invoice_entry_service: READ
   },
   [ROLES.ACCOUNTANT]: {
-    dashboard: READ, stations: READ, sales: READ_EXPORT, invoices: ['view', 'update', 'export', 'approve'],
+    dashboard: READ, stations: READ, items: READ_EXPORT, brands: READ, sales: READ_EXPORT, invoices: ['view', 'update', 'export', 'approve'],
     meter_readings: READ, products: READ, tanks: READ, pumps: READ, stock_entries: READ_EXPORT,
     stock_transfers: READ, customers: READ_EXPORT, suppliers: CRUD_EXPORT, employees: READ,
     shifts: READ_EXPORT, expenses: CRUD_EXPORT, accounting: CRUD_EXPORT, reports: READ_EXPORT,
@@ -83,7 +105,7 @@ export const PERMISSION_MATRIX = {
     fuel_audit_config: READ, invoice_entry_service: READ
   },
   [ROLES.CASHIER]: {
-    dashboard: READ, stations: READ, sales: ['view', 'create'], invoices: ['view', 'create'],
+    dashboard: READ, stations: READ, items: READ, sales: ['view', 'create'], invoices: ['view', 'create'],
     meter_readings: READ, products: READ, customers: ['view', 'create'], shifts: ['view', 'create', 'update'],
     expenses: ['view', 'create'], notifications: READ,
     fuel_sales: ['view', 'create'], atg: READ

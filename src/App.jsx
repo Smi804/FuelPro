@@ -6,6 +6,8 @@ import RequireAuth from './auth/RequireAuth.jsx';
 import Dashboard from './pages/Dashboard/index.jsx';
 import StationList from './pages/Stations/StationList/index.jsx';
 import StationDetails from './pages/Stations/StationDetails/index.jsx';
+import ItemList from './pages/Items/ItemList/index.jsx';
+import BrandList from './pages/Brands/BrandList/index.jsx';
 import NewSale from './pages/Sales/NewSale/index.jsx';
 import SalesList from './pages/Sales/SalesList/index.jsx';
 import Invoices from './pages/Sales/Invoices/index.jsx';
@@ -70,6 +72,9 @@ export default function App() {
 
         <Route path="/stations" element={guard('stations:view', <StationList />)} />
         <Route path="/stations/:id" element={guard('stations:view', <StationDetails />)} />
+
+        <Route path="/items" element={guard('items:view', <ItemList />)} />
+        <Route path="/brands" element={guard('brands:view', <BrandList />)} />
 
         <Route path="/sales/new" element={guard('sales:view', <NewSale />)} />
         <Route path="/sales" element={guard('sales:view', <SalesList />)} />

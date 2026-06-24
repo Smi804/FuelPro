@@ -2,7 +2,8 @@ import DataTable from '../../../components/crud/DataTable.jsx';
 import SummaryCard from '../../../components/crud/SummaryCard.jsx';
 import StatusBadge from '../../../components/crud/StatusBadge.jsx';
 import ChartCard from '../../../components/crud/ChartCard.jsx';
-import { AreaChart } from '../../../components/MiniCharts.jsx';
+import { AreaChart, Donut } from '../../../components/MiniCharts.jsx';
+import { GRADES, getStationSupply, gallonsDonut, usd, gal } from '../../../data/mock/supply.js';
 import { PUMPS, PUMP_STATUS } from '../../../data/mock/pumps.js';
 import { TANKS, TANK_STATUS } from '../../../data/mock/tanks.js';
 import { EMPLOYEES, EMPLOYEE_STATUS } from '../../../data/mock/people.js';
@@ -13,27 +14,59 @@ import { ROLE_LABEL } from '../../../domain/roles.js';
 
 const fuelChip = (t) => <span className={`chip ${FUEL_TYPE[t].cls}`}>{FUEL_TYPE[t].label}</span>;
 
+const STATION_STATUS = {
+  active: { label: 'Active', cls: 'status-green' },
+  inactive: { label: 'Inactive', cls: 'status-red' }
+};
+
+const addressLine = (s) => [s.address, s.city, s.state, s.zip_code, s.country].filter(Boolean).join(', ') || '—';
+
+const price = (n) => `$${Number(n).toFixed(2)}`;
+
 export function OverviewTab({ station }) {
+  const supply = getStationSupply(station.id);
+  const segments = gallonsDonut(supply.gallons);
+
   return (
     <>
-      <div className="row col-4">
-        <SummaryCard icon="fuel" tone="teal" label="Pumps" value={station.pumpCount} />
-        <SummaryCard icon="inventory" tone="blue" label="Tanks" value={station.tankCount} />
-        <SummaryCard icon="profile" tone="green" label="Employees" value={station.employeeCount} />
-        <SummaryCard icon="price" tone="yellow" label="Fuel Stock" value={`${station.fuelStockPct}%`} />
+      <div className="row col-3">
+        <SummaryCard icon="fuel" tone="blue" label="Total gallons purchased" value={gal(supply.totalGallons)} subtext="To date" />
+        <SummaryCard icon="wallet" tone="teal" label="Total amount paid" value={usd(supply.amountPaid)} subtext="To date" />
+        <SummaryCard icon="truck" tone="green" label="Supplier" value={supply.supplier} subtext="Primary gas supplier" />
       </div>
+
       <div className="row col-8-4">
-        <ChartCard title="Sales trend" subtitle="Last 14 days">
-          <AreaChart points={DAILY_SALES} id={`st-${station.id}`} />
-        </ChartCard>
-        <div className="card">
-          <div className="card-header"><div className="card-title">Station info</div></div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-            <Info label="Address" value={`${station.address}, ${station.city}`} />
-            <Info label="Manager" value={station.managerName} />
-            <Info label="Status" value={<StatusBadge value={station.status} map={{ active: { label: 'Active', cls: 'status-green' }, maintenance: { label: 'Maintenance', cls: 'status-yellow' }, inactive: { label: 'Inactive', cls: 'status-red' } }} />} />
-            <Info label="Opened" value={station.createdAt} />
+        <ChartCard title="Today's price" subtitle="Current quote · $/gallon">
+          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <div className="row col-4" style={{ width: '100%' }}>
+              {GRADES.map((g) => (
+                <div key={g.key} style={{ borderLeft: `3px solid ${g.color}`, paddingLeft: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{g.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{price(supply.today[g.key])}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>per gallon</div>
+                </div>
+              ))}
+            </div>
           </div>
+        </ChartCard>
+        <ChartCard title="Gallons by grade" subtitle="Purchased to date">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Donut segments={segments} centerNum={`${(supply.totalGallons / 1e6).toFixed(2)}M`} centerSub="gal" size={150} />
+          </div>
+        </ChartCard>
+      </div>
+
+      <div className="card">
+        <div className="card-header"><div className="card-title">Station info</div></div>
+        <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 13 }}>
+          <Info label="Code" value={station.code} />
+          <Info label="Brand" value={station.brand || '—'} />
+          <Info label="Status" value={<StatusBadge value={station.status} map={STATION_STATUS} />} />
+          <Info label="Address" value={addressLine(station)} />
+          <Info label="Manager" value={station.manager_name || '—'} />
+          <Info label="Phone" value={station.phone || '—'} />
+          <Info label="Email" value={station.email || '—'} />
+          <Info label="Hours" value={station.is_24_hours ? 'Open 24 hours' : 'Standard hours'} />
         </div>
       </div>
     </>
@@ -177,7 +210,7 @@ export function SettingsTab({ station }) {
           </div>
           <div className="form-group">
             <label className="form-label">Manager</label>
-            <input className="form-control" defaultValue={station.managerName} />
+            <input className="form-control" defaultValue={station.manager_name} />
           </div>
         </div>
         <div className="form-group">

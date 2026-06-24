@@ -22,6 +22,69 @@ export function AreaChart({ points = [30, 45, 38, 55, 48, 62, 58, 72, 66, 80, 74
   );
 }
 
+// Several value series drawn over a shared y-scale, with a labelled Y axis and
+// X-axis tick labels. `series` is [{ label, color, data: number[] }] (all the
+// same length); `labels` are the X-axis ticks; `formatY` formats axis values.
+export function MultiLineChart({ series = [], labels = [], id = 'ml', formatY = (v) => v, ticks = 4 }) {
+  const all = series.flatMap((s) => s.data);
+  if (!all.length) return null;
+
+  const w = 620;
+  const h = 240;
+  const mL = 48; // room for Y-axis labels
+  const mR = 12;
+  const mT = 12;
+  const mB = 22; // room for X-axis labels
+
+  const rawMin = Math.min(...all);
+  const rawMax = Math.max(...all);
+  const span = rawMax - rawMin || 1;
+  const min = rawMin - span * 0.12;
+  const max = rawMax + span * 0.12;
+  const range = max - min || 1;
+
+  const n = series[0].data.length;
+  const plotW = w - mL - mR;
+  const plotH = h - mT - mB;
+  const stepX = plotW / (n - 1 || 1);
+  const x = (i) => mL + i * stepX;
+  const y = (v) => mT + (1 - (v - min) / range) * plotH;
+
+  const tickVals = Array.from({ length: ticks + 1 }, (_, k) => min + (range * k) / ticks);
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', display: 'block' }} role="img">
+      {tickVals.map((tv, i) => {
+        const gy = y(tv);
+        return (
+          <g key={`t-${id}-${i}`}>
+            <line x1={mL} y1={gy} x2={w - mR} y2={gy} stroke="var(--border-color-light)" strokeWidth="1" />
+            <text x={mL - 8} y={gy + 3} textAnchor="end" fontSize="10" fill="var(--text-muted)">
+              {formatY(tv)}
+            </text>
+          </g>
+        );
+      })}
+      {labels.map((lb, i) => (
+        <text key={`x-${id}-${i}`} x={x(i)} y={h - 6} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
+          {lb}
+        </text>
+      ))}
+      {series.map((s) => {
+        const pts = s.data.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+        return (
+          <g key={s.label}>
+            <polyline points={pts} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" />
+            {s.data.map((v, i) => (
+              <circle key={i} cx={x(i)} cy={y(v)} r="3" fill={s.color} />
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export function Bars({ data = [], color = 'var(--primary)' }) {
   const w = 600;
   const h = 180;

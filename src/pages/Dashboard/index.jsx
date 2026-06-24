@@ -1,43 +1,57 @@
 import PageHeader from '../../components/PageHeader.jsx';
+import SummaryCard from '../../components/crud/SummaryCard.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
-import SummaryCards from './components/SummaryCards.jsx';
+import SupplierPrices from './components/SupplierPrices.jsx';
+import PriceTrends from './components/PriceTrends.jsx';
 import DashboardCharts from './components/DashboardCharts.jsx';
-import DashboardWidgets from './components/DashboardWidgets.jsx';
-import { STATIONS } from '../../data/mock/stations.js';
-import { TANKS } from '../../data/mock/tanks.js';
-import { SALES } from '../../data/mock/sales.js';
-import { SHIFTS } from '../../data/mock/operations.js';
-
-const TODAY = '2026-06-23';
+import StationBoard from './components/StationBoard.jsx';
+import SupplierStationMap from './components/SupplierStationMap.jsx';
+import { TOTAL_AMOUNT_PAID, TOTAL_GALLONS, GALLONS_BY_GRADE, GRADES, SUPPLIERS, SUPPLY_STATIONS, usd, gal } from '../../data/mock/supply.js';
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const todays = SALES.filter((s) => s.date.startsWith(TODAY));
-  const salesToday = todays.reduce((sum, s) => sum + s.amount, 0);
-  const creditToday = todays.filter((s) => s.paymentMethod === 'credit').reduce((sum, s) => sum + s.amount, 0);
-  const cashToday = todays.filter((s) => s.paymentMethod === 'cash').reduce((sum, s) => sum + s.amount, 0);
-  const openCash = SHIFTS.filter((s) => s.status === 'open').reduce((sum, s) => sum + s.openingCash, 0);
-  const pending = SALES.filter((s) => s.paymentStatus !== 'paid').reduce((sum, s) => sum + s.amount, 0);
-  const totalStock = TANKS.reduce((sum, t) => sum + t.currentStock, 0);
-  const avgStockPct = Math.round(TANKS.reduce((s, t) => s + t.currentStock / t.capacity, 0) / TANKS.length * 100);
-  const activeStations = STATIONS.filter((s) => s.status === 'active').length;
-
-  const cards = [
-    { icon: 'receipt', tone: 'teal', label: 'Total Sales Today', value: `$${salesToday.toFixed(0)}`, change: '8.2%', changeDir: 'up', subtext: `${todays.length} transactions` },
-    { icon: 'fuel', tone: 'blue', label: 'Fuel Stock', value: `${(totalStock / 1000).toFixed(1)}k L`, subtext: `${avgStockPct}% avg capacity` },
-    { icon: 'wallet', tone: 'green', label: 'Cash in Hand', value: `$${(cashToday + openCash).toFixed(0)}`, subtext: 'Across open shifts' },
-    { icon: 'tag', tone: 'yellow', label: 'Credit Sales', value: `$${creditToday.toFixed(0)}`, change: '3.1%', changeDir: 'up', subtext: 'Today, on credit' },
-    { icon: 'fuel', tone: 'purple', label: 'Active Stations', value: `${activeStations}/${STATIONS.length}`, subtext: 'Operational now' },
-    { icon: 'price', tone: 'red', label: 'Pending Payments', value: `$${pending.toFixed(0)}`, change: '1.4%', changeDir: 'down', subtext: 'Unsettled invoices' }
+  const totals = [
+    { icon: 'wallet', tone: 'teal', label: 'Total Amount Paid', value: usd(TOTAL_AMOUNT_PAID), subtext: 'All stations · to date' },
+    { icon: 'fuel', tone: 'blue', label: 'Total Gallons Purchased', value: gal(TOTAL_GALLONS), subtext: 'All stations · to date' },
+    { icon: 'truck', tone: 'green', label: 'Suppliers', value: SUPPLIERS.length, subtext: 'Active gas suppliers' },
+    { icon: 'fuel', tone: 'purple', label: 'Stations Served', value: SUPPLY_STATIONS.length, subtext: 'Across all suppliers' }
   ];
+
+  // Gallons purchased to date, broken out per grade (regular / plus / premium / diesel).
+  const gradeCards = GRADES.map((g) => ({
+    icon: 'fuel',
+    tone: { regular: 'blue', plus: 'green', premium: 'purple', diesel: 'yellow' }[g.key],
+    label: `${g.label} purchased`,
+    value: gal(GALLONS_BY_GRADE[g.key]),
+    subtext: 'Gallons to date'
+  }));
 
   return (
     <div className="page-wrapper">
       <PageHeader pretitle={`Welcome back, ${user.name.split(' ')[0]}`} title="Dashboard" />
-      <SummaryCards cards={cards} />
+
+      <div className="row col-4">
+        {totals.map((c) => (
+          <SummaryCard key={c.label} {...c} />
+        ))}
+      </div>
+
+      <SupplierPrices />
+
+      <PriceTrends />
+
+      <div className="row col-4">
+        {gradeCards.map((c) => (
+          <SummaryCard key={c.label} {...c} />
+        ))}
+      </div>
+
       <DashboardCharts />
-      <DashboardWidgets />
+
+      <StationBoard />
+
+      <SupplierStationMap />
     </div>
   );
 }

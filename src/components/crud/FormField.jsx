@@ -31,6 +31,25 @@ export default function FormField({
   };
   const fileMeta = type === 'file' && value && typeof value === 'object' ? value : null;
 
+  if (type === 'checkbox') {
+    return (
+      <div className="form-group" style={span ? { gridColumn: `span ${span}` } : undefined}>
+        <label className="form-check" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input
+            id={name}
+            type="checkbox"
+            checked={!!value}
+            onChange={(e) => onChange(name, e.target.checked)}
+            disabled={readOnly}
+            style={{ margin: 0 }}
+          />
+          <span>{label}</span>
+        </label>
+        {hint && <div className="form-hint">{hint}</div>}
+      </div>
+    );
+  }
+
   return (
     <div className="form-group" style={span ? { gridColumn: `span ${span}` } : undefined}>
       {label && (
