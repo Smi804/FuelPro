@@ -31,6 +31,7 @@ Keep this always-applied rule small. Use project skills for detail:
 - **Subpath-safe URLs.** Use `import.meta.env.BASE_URL` for asset paths; never hard-code a leading `/`.
 - **Idempotent, guarded components.** Pages/components must render safely when their data is absent (loading/empty states).
 - **No `console.*` in shipped code.**
+- **Edit surgically.** Change only the lines that need changing; never rewrite lines that aren't actually changing. Preserve the existing formatting (indentation, quotes, spacing, import order, comments) of untouched code — don't reflow or reformat it. See the `token-lean-workflow` skill.
 
 ## Anti-patterns
 
@@ -41,3 +42,4 @@ Keep this always-applied rule small. Use project skills for detail:
 - Don't break folder-per-page (no flat `src/pages/Foo.jsx` for new pages).
 - Don't use hex colors in components — use the `--token` CSS variables.
 - Don't edit `dist/`, `node_modules/`, or generated output.
+- Don't rewrite or reformat lines that aren't changing — make minimal, surgical edits and leave untouched code exactly as it was.

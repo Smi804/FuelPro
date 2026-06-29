@@ -17,9 +17,7 @@ import Tanks from './pages/Inventory/Tanks/index.jsx';
 import Pumps from './pages/Inventory/Pumps/index.jsx';
 import StockEntries from './pages/Inventory/StockEntries/index.jsx';
 import StockTransfers from './pages/Inventory/StockTransfers/index.jsx';
-import Customers from './pages/Customers/index.jsx';
-import Suppliers from './pages/Suppliers/index.jsx';
-import Employees from './pages/Employees/index.jsx';
+import Persons from './pages/Persons/index.jsx';
 import StartShift from './pages/Shifts/StartShift/index.jsx';
 import EndShift from './pages/Shifts/EndShift/index.jsx';
 import ShiftReports from './pages/Shifts/ShiftReports/index.jsx';
@@ -87,9 +85,7 @@ export default function App() {
         <Route path="/inventory/stock-entries" element={guard('stock_entries:view', <StockEntries />)} />
         <Route path="/inventory/stock-transfers" element={guard('stock_transfers:view', <StockTransfers />)} />
 
-        <Route path="/customers" element={guard('customers:view', <Customers />)} />
-        <Route path="/suppliers" element={guard('suppliers:view', <Suppliers />)} />
-        <Route path="/employees" element={guard('employees:view', <Employees />)} />
+        <Route path="/persons" element={guard('persons:view', <Persons />)} />
 
         <Route path="/shifts/start" element={guard('shifts:view', <StartShift />)} />
         <Route path="/shifts/end" element={guard('shifts:view', <EndShift />)} />

@@ -22,9 +22,9 @@ export default function FormField({
   const handle = (e) => {
     if (type === 'file') {
       const file = e.target.files?.[0];
-      // Keep the actual file (via an object URL) so it can be previewed later,
-      // not just its name.
-      onChange(name, file ? { name: file.name, url: URL.createObjectURL(file), type: file.type } : '');
+      // Keep preview metadata (object URL) AND the raw File so it can be both
+      // previewed and uploaded as multipart/form-data.
+      onChange(name, file ? { name: file.name, url: URL.createObjectURL(file), type: file.type, file } : '');
       return;
     }
     onChange(name, e.target.value);

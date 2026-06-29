@@ -16,7 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 export const USE_MOCK = false;
 
-const DEFAULT_BASE_URL = 'http://192.168.18.86/fuelpro_backend/api/';
+const DEFAULT_BASE_URL = 'api.summitmarketing.llc/api/';
 
 const raw = import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE_URL;
 

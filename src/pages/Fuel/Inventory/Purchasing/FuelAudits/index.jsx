@@ -6,8 +6,11 @@ import SummaryCard from '../../../../../components/crud/SummaryCard.jsx';
 import StatusBadge from '../../../../../components/crud/StatusBadge.jsx';
 import ExportButtons from '../../../../../components/crud/ExportButtons.jsx';
 import { useAuth } from '../../../../../auth/AuthContext.jsx';
-import { FUEL_AUDITS, AUDIT_PAY_STATUS } from '../../../../../data/mock/fuel.js';
+import { AUDIT_PAY_STATUS } from '../../../../../data/mock/fuel.js';
 import { GRADES, TODAY_QUOTES } from '../../../../../data/mock/supply.js';
+
+// No backend API for audits yet — start empty (no dummy data).
+const FUEL_AUDITS = [];
 
 const usd = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usd0 = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;

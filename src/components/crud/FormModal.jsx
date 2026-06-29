@@ -44,9 +44,12 @@ export default function FormModal({
     setErrors((e) => (e[name] ? { ...e, [name]: undefined } : e));
   };
 
+  // Fields may declare `when(values)` to render/validate only conditionally.
+  const visibleFields = fields.filter((f) => !f.when || f.when(values));
+
   const validate = () => {
     const next = {};
-    fields.forEach((f) => {
+    visibleFields.forEach((f) => {
       const val = values[f.name];
       if (f.required && (val === '' || val == null)) next[f.name] = `${f.label} is required`;
       else if (f.validate) {
@@ -91,7 +94,7 @@ export default function FormModal({
     >
       <form id="form-modal" onSubmit={submit} noValidate>
         <div className="form-row" style={cols === 1 ? { gridTemplateColumns: '1fr' } : undefined}>
-          {fields.map((f) => (
+          {visibleFields.map((f) => (
             <FormField
               key={f.name}
               {...f}

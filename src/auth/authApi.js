@@ -78,7 +78,7 @@ export async function adminLoginRequest(email, password) {
     }
     throw rejectAuth('Invalid email or password.');
   }
-  const data = await api.post('admin/login', { email, password });
+  const data = await api.post('login', { email, password });
   ensureOk(data);
   return { token: data.token, user: buildUser(data.user || {}, email) };
 }

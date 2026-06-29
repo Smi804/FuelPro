@@ -1,11 +1,8 @@
 import ResourcePage from '../../../../../components/crud/ResourcePage.jsx';
 import StatusBadge from '../../../../../components/crud/StatusBadge.jsx';
-import { PURCHASE_INVOICES, PI_STATUS } from '../../../../../data/mock/fuel.js';
+import { PI_STATUS } from '../../../../../data/mock/fuel.js';
 import { SUPPLIERS } from '../../../../../data/mock/people.js';
 import { productOptions, stationIdOptions } from '../../../../../data/options.js';
-import { STATIONS } from '../../../../../data/mock/stations.js';
-
-const stationName = (id) => STATIONS.find((s) => s.id === id)?.name || id;
 
 const columns = [
   { key: 'invoiceNumber', label: 'Invoice #', render: (r) => <span className="cell-strong">{r.invoiceNumber}</span> },
@@ -30,7 +27,6 @@ const fields = [
 ];
 
 export default function PurchaseInvoices() {
-  const withStation = PURCHASE_INVOICES.map((p) => ({ ...p, stationName: stationName(p.stationId) }));
   const summary = (rows) => [
     { icon: 'receipt', tone: 'teal', label: 'Invoices', value: rows.length },
     { icon: 'wallet', tone: 'blue', label: 'Total Value', value: `$${rows.reduce((s, r) => s + Number(r.amount), 0).toLocaleString()}` },
@@ -41,7 +37,7 @@ export default function PurchaseInvoices() {
       perm="purchase_invoices"
       pretitle="Fuel · Purchasing"
       title="Purchase Invoices"
-      data={withStation}
+      data={[]}
       columns={columns}
       searchKeys={['invoiceNumber', 'supplierName', 'productName']}
       searchPlaceholder="Search invoices…"
