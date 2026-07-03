@@ -48,7 +48,8 @@ export const PURCHASE_INVOICES = [
 export const AUDIT_STATUS = {
   passed: { label: 'Passed', cls: 'status-green' },
   flagged: { label: 'Flagged', cls: 'status-yellow' },
-  failed: { label: 'Failed', cls: 'status-red' }
+  failed: { label: 'Failed', cls: 'status-red' },
+  'n/a': { label: 'N/A', cls: 'status-blue' }
 };
 
 // Invoice payment status used by the audit table.
@@ -113,7 +114,7 @@ export const IEL_RESULT = {
 // ── Invoice Entry: upload options ───────────────────────────────
 export const INVOICE_TYPE_OPTIONS = [
   { value: 'fuel', label: 'Fuel' },
-  { value: 'retail', label: 'Retail' }
+  // { value: 'retail', label: 'Retail' }
 ];
 
 export const INVOICE_TYPE = {
@@ -124,8 +125,8 @@ export const INVOICE_TYPE = {
 // Document attached to the invoice upload.
 export const DOC_TYPE_OPTIONS = [
   { value: 'invoice', label: 'Invoice' },
-  { value: 'bol', label: 'BOL' },
-  { value: 'both', label: 'Both' }
+  // { value: 'bol', label: 'BOL' },
+  // { value: 'both', label: 'Both' }
 ];
 
 export const DOC_TYPE = {

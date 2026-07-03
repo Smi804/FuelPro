@@ -76,8 +76,8 @@ export async function getBrands({ records = 10, pageNo = 1, colName = 'name', so
 }
 
 /** Active brands for a <select>: [{ value: id, label: name }]. */
-export async function getBrandsDropDown() {
-  const sid = getStationId();
+export async function getBrandsDropDown({ station_id } = {}) {
+  const sid = station_id ?? getStationId();
   if (USE_MOCK) {
     await delay(120);
     return mockBrands

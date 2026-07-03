@@ -6,7 +6,7 @@
 //   GET    getItems           paginated list (records, pageNo, colName, sort, [name], [type], [category_id], [station_id], [status])
 //   GET    itemDetails        fetch one with category + station (id)
 //   GET    editItem           fetch one for editing (id)
-//   GET    getItemsDropDown   id / name list ([type], [category_id], [station_id])
+//   GET    getItemsDropDown   id / name list ([type], [category_id], [station_id], [user_id])
 //   DELETE deleteItem         delete (id)  — blocked if referenced
 import { api, getStationId } from './client.js';
 import { USE_MOCK } from './config.js';
@@ -120,7 +120,7 @@ export async function editItem(id) {
 }
 
 /** Dropdown options: [{ value: id, label: name }]. */
-export async function getItemsDropDown({ type, category_id, station_id } = {}) {
+export async function getItemsDropDown({ type, category_id, station_id, userId, user_id } = {}) {
   if (USE_MOCK) {
     await delay(120);
     const sid = station_id ?? getStationId();
@@ -134,6 +134,8 @@ export async function getItemsDropDown({ type, category_id, station_id } = {}) {
   if (category_id) qs.set('category_id', category_id);
   const sid = station_id ?? getStationId();
   if (sid) qs.set('station_id', sid);
+  const uid = user_id ?? userId;
+  if (uid != null && uid !== '') qs.set('user_id', uid);
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   const res = await api.get(`getItemsDropDown${suffix}`);
   assertOk(res);

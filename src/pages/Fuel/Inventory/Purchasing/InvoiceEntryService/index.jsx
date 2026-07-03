@@ -4,6 +4,7 @@ import DataTable from '../../../../../components/crud/DataTable.jsx';
 import SummaryCard from '../../../../../components/crud/SummaryCard.jsx';
 import StatusBadge from '../../../../../components/crud/StatusBadge.jsx';
 import FormModal from '../../../../../components/crud/FormModal.jsx';
+import ConfirmDialog from '../../../../../components/crud/ConfirmDialog.jsx';
 import Tabs from '../../../../../components/crud/Tabs.jsx';
 import Modal from '../../../../../components/Modal.jsx';
 import Toggle from '../../../../../components/Toggle.jsx';
@@ -11,14 +12,18 @@ import { useAuth } from '../../../../../auth/AuthContext.jsx';
 import { showToast } from '../../../../../v4/toast.js';
 import { getPersonsDropDown } from '../../../../../api/persons.js';
 import { addInvoice as uploadInvoiceApi, getInvoices } from '../../../../../api/invoices.js';
+import { printInvoiceEntriesPdf } from '../../../../../utils/invoiceEntriesPdf.js';
+import { getBols, editBol, addBol, updateBol, deleteBol } from '../../../../../api/bols.js';
 import InvoiceUploadModal from './InvoiceUploadModal.jsx';
+import InvoiceViewModal from './InvoiceViewModal.jsx';
+import BolUploadModal from './BolUploadModal.jsx';
 import { IEL_RESULT, INVOICE_TYPE, DOC_TYPE, UPLOAD_STATUS } from '../../../../../data/mock/fuel.js';
 
 // No backend API for these sections yet — start empty (no dummy data).
 const INVOICE_ENTRY_LOG = [];
 const INVOICE_ERRORS = [];
 
-const money = (n) => `€${Number(n).toLocaleString()}`;
+const money = (n) => `$${Number(n).toLocaleString()}`;
 const today = () => new Date().toISOString().slice(0, 10);
 
 // Supplier person_type id on the backend.
@@ -33,6 +38,7 @@ const isImage = (f) =>
 const TABS = [
   { key: 'summary', label: 'Summary' },
   { key: 'uploaded', label: 'Uploaded Invoices' },
+  { key: 'bols', label: 'Uploaded BOLs' },
   { key: 'errors', label: 'Invoices Error' },
   { key: 'bank', label: 'Upload Bank Statement' }
 ];
@@ -76,15 +82,21 @@ const bankFields = [
 ];
 
 export default function InvoiceEntryService() {
-  const { can, activeStationId } = useAuth();
+  const { can, activeStationId, user } = useAuth();
   const canCreate = can('invoice_entry_service:create');
+  const canUpdate = can('invoice_entry_service:update');
+  const canDelete = can('invoice_entry_service:delete');
 
   const [tab, setTab] = useState('summary');
   const [enabled, setEnabled] = useState(true);
   const [uploaded, setUploaded] = useState([]);
+  const [bols, setBols] = useState([]);
   const [statements, setStatements] = useState([]);
-  const [modal, setModal] = useState(null); // 'invoice' | 'bank' | null
+  const [modal, setModal] = useState(null); // 'invoice' | 'bol' | 'bank' | null
+  const [bolModal, setBolModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', bol }
+  const [bolConfirm, setBolConfirm] = useState(null);
   const [preview, setPreview] = useState(null); // { name, url, type }
+  const [invoiceView, setInvoiceView] = useState(null); // { id }
   const [vendors, setVendors] = useState([]);
 
   // Active suppliers for the vendor picker — scoped to the selected station
@@ -98,23 +110,56 @@ export default function InvoiceEntryService() {
   // Uploaded invoices for the selected station.
   const loadInvoices = useCallback(async () => {
     try {
-      setUploaded(await getInvoices());
+      setUploaded(await getInvoices({ station_id: activeStationId !== 'all' ? activeStationId : undefined }));
     } catch (err) {
       showToast(err?.message || 'Failed to load invoices', { variant: 'danger' });
       setUploaded([]);
     }
   }, [activeStationId]);
 
+  const loadBols = useCallback(async () => {
+    try {
+      setBols(await getBols({ doc_type: 'bol' }));
+    } catch (err) {
+      showToast(err?.message || 'Failed to load BOLs', { variant: 'danger' });
+      setBols([]);
+    }
+  }, [activeStationId]);
+
   useEffect(() => {
     loadInvoices();
-  }, [loadInvoices]);
-
-  const queued = INVOICE_ENTRY_LOG.filter((l) => l.result === 'queued').length;
+    loadBols();
+  }, [loadInvoices, loadBols]);
 
   const addInvoice = async (payload) => {
-    // Upload (incl. any manual line items as invoices_children), then reload.
     await uploadInvoiceApi(payload);
     await loadInvoices();
+  };
+
+  const saveBol = async (payload) => {
+    if (payload.id) await updateBol(payload.id, payload);
+    else await addBol(payload);
+    await loadBols();
+    setTab('bols');
+  };
+
+  const openEditBol = async (row) => {
+    try {
+      const full = await editBol(row.id);
+      setBolModal({ mode: 'edit', bol: full });
+    } catch (err) {
+      showToast(err?.message || 'Failed to load BOL', { variant: 'danger' });
+    }
+  };
+
+  const removeBol = async (row) => {
+    try {
+      await deleteBol(row.id);
+      showToast('BOL deleted', { variant: 'success' });
+      await loadBols();
+    } catch (err) {
+      showToast(err?.message || 'Failed to delete BOL', { variant: 'danger' });
+    }
   };
 
   const addStatement = ({ file, ...rest }) => {
@@ -141,7 +186,8 @@ export default function InvoiceEntryService() {
     { key: 'amount', label: 'Amount', align: 'right', render: (r) => money(r.amount) },
     { key: 'fileName', label: 'File', sortable: false, render: fileCell(setPreview) },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge value={r.status} map={UPLOAD_STATUS} />, exportValue: (r) => r.status },
-    { key: 'date', label: 'Date' }
+    { key: 'date', label: 'Invoice date' },
+    { key: 'dueDate', label: 'Due date', render: (r) => r.dueDate || <span style={{ color: 'var(--text-muted)' }}>—</span> }
   ];
 
   const bankColumns = [
@@ -151,6 +197,35 @@ export default function InvoiceEntryService() {
     { key: 'amount', label: 'Amount', align: 'right', render: (r) => money(r.amount) },
     { key: 'fileName', label: 'File', sortable: false, render: fileCell(setPreview) },
     { key: 'date', label: 'Uploaded' }
+  ];
+
+  const bolColumns = [
+    { key: 'bolNumber', label: 'BOL No.', render: (r) => <span className="cell-strong">{r.bolNumber || '—'}</span> },
+    { key: 'type', label: 'Type', render: (r) => <StatusBadge value={r.type} map={INVOICE_TYPE} />, exportValue: (r) => r.type },
+    { key: 'vendor', label: 'Vendor' },
+    { key: 'remarks', label: 'Remarks', render: (r) => r.remarks || <span style={{ color: 'var(--text-muted)' }}>—</span> },
+    { key: 'fileName', label: 'File', sortable: false, render: fileCell(setPreview) },
+    { key: 'date', label: 'Date' }
+  ];
+
+  const bolRowActions = (row) => {
+    const actions = [];
+    if (canUpdate) actions.push({ label: 'Edit', onClick: () => openEditBol(row) });
+    if (canDelete) actions.push({ label: 'Delete', danger: true, onClick: () => setBolConfirm(row) });
+    return actions;
+  };
+
+  const openInvoicePdf = async (row) => {
+    try {
+      await printInvoiceEntriesPdf(row.id, activeStationId !== 'all' ? activeStationId : undefined);
+    } catch (err) {
+      showToast(err?.message || 'Failed to generate invoice PDF', { variant: 'danger' });
+    }
+  };
+
+  const invoiceRowActions = (row) => [
+    { label: 'View', onClick: () => setInvoiceView({ id: row.id }) },
+    { label: 'Print', onClick: () => openInvoicePdf(row) }
   ];
 
   return (
@@ -167,7 +242,7 @@ export default function InvoiceEntryService() {
         <>
           <div className="row col-4">
             <SummaryCard icon="receipt" tone="teal" label="Uploaded invoices" value={uploaded.length} />
-            <SummaryCard icon="clock" tone="blue" label="In queue" value={queued} />
+            <SummaryCard icon="fuel" tone="blue" label="Uploaded BOLs" value={bols.length} />
             <SummaryCard icon="bell" tone="red" label="Invoices in error" value={INVOICE_ERRORS.length} />
             <SummaryCard icon="book" tone="green" label="Bank statements" value={statements.length} />
           </div>
@@ -205,6 +280,7 @@ export default function InvoiceEntryService() {
           searchKeys={['invoiceNumber', 'vendor']}
           searchPlaceholder="Search invoices…"
           selectable={false}
+          rowActions={invoiceRowActions}
           emptyText="No invoices uploaded yet."
           toolbar={
             canCreate && (
@@ -213,6 +289,30 @@ export default function InvoiceEntryService() {
                   <path d="M4 8h8M8 4v8" />
                 </svg>
                 Upload invoice
+              </button>
+            )
+          }
+        />
+      )}
+
+      {tab === 'bols' && (
+        <DataTable
+          title="Uploaded BOLs"
+          subtitle="Bill of lading documents for quantity audit"
+          columns={bolColumns}
+          rows={bols}
+          searchKeys={['bolNumber', 'vendor', 'remarks']}
+          searchPlaceholder="Search BOLs…"
+          selectable={false}
+          rowActions={canUpdate || canDelete ? bolRowActions : undefined}
+          emptyText="No BOLs uploaded yet."
+          toolbar={
+            canCreate && (
+              <button className="btn btn-primary btn-sm" onClick={() => setBolModal({ mode: 'create' })}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M4 8h8M8 4v8" />
+                </svg>
+                Upload BOL
               </button>
             )
           }
@@ -255,8 +355,42 @@ export default function InvoiceEntryService() {
         />
       )}
 
+      {invoiceView && (
+        <InvoiceViewModal
+          invoiceId={invoiceView.id}
+          stationId={activeStationId}
+          onClose={() => setInvoiceView(null)}
+        />
+      )}
+
       {modal === 'invoice' && (
-        <InvoiceUploadModal vendors={vendors} onClose={() => setModal(null)} onSubmit={addInvoice} />
+        <InvoiceUploadModal
+          vendors={vendors}
+          userId={user?.id}
+          stationId={activeStationId}
+          onClose={() => setModal(null)}
+          onSubmit={addInvoice}
+        />
+      )}
+
+      {bolModal && (
+        <BolUploadModal
+          vendors={vendors}
+          userId={user?.id}
+          bol={bolModal.mode === 'edit' ? bolModal.bol : null}
+          onClose={() => setBolModal(null)}
+          onSubmit={saveBol}
+        />
+      )}
+
+      {bolConfirm && (
+        <ConfirmDialog
+          title="Delete BOL?"
+          body={`Delete BOL ${bolConfirm.bolNumber || bolConfirm.id}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={() => removeBol(bolConfirm)}
+          onClose={() => setBolConfirm(null)}
+        />
       )}
 
       {modal === 'bank' && (

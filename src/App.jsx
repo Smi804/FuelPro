@@ -2,12 +2,14 @@ import { Routes, Route } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import RequireAuth from './auth/RequireAuth.jsx';
+import RootRedirect from './auth/RootRedirect.jsx';
 
 import Dashboard from './pages/Dashboard/index.jsx';
 import StationList from './pages/Stations/StationList/index.jsx';
 import StationDetails from './pages/Stations/StationDetails/index.jsx';
 import ItemList from './pages/Items/ItemList/index.jsx';
 import BrandList from './pages/Brands/BrandList/index.jsx';
+import TaxList from './pages/Taxes/TaxList/index.jsx';
 import NewSale from './pages/Sales/NewSale/index.jsx';
 import SalesList from './pages/Sales/SalesList/index.jsx';
 import Invoices from './pages/Sales/Invoices/index.jsx';
@@ -48,6 +50,7 @@ import PurchaseInvoices from './pages/Fuel/Inventory/Purchasing/PurchaseInvoices
 import FuelAudits from './pages/Fuel/Inventory/Purchasing/FuelAudits/index.jsx';
 import FuelAuditConfig from './pages/Fuel/Inventory/Purchasing/FuelAuditConfig/index.jsx';
 import InvoiceEntryService from './pages/Fuel/Inventory/Purchasing/InvoiceEntryService/index.jsx';
+import DailyQuotations from './pages/Fuel/Inventory/Purchasing/DailyQuotations/index.jsx';
 
 import Login from './pages/Auth/Login/index.jsx';
 import Register from './pages/Auth/Register/index.jsx';
@@ -59,6 +62,8 @@ const guard = (perm, element) => <ProtectedRoute perm={perm}>{element}</Protecte
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<RootRedirect />} />
+
       <Route
         element={
           <RequireAuth>
@@ -66,13 +71,14 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={guard('dashboard:view', <Dashboard />)} />
+        <Route path="/dashboard" element={guard('dashboard:view', <Dashboard />)} />
 
         <Route path="/stations" element={guard('stations:view', <StationList />)} />
         <Route path="/stations/:id" element={guard('stations:view', <StationDetails />)} />
 
         <Route path="/items" element={guard('items:view', <ItemList />)} />
         <Route path="/brands" element={guard('brands:view', <BrandList />)} />
+        <Route path="/taxes" element={guard('taxes:view', <TaxList />)} />
 
         <Route path="/sales/new" element={guard('sales:view', <NewSale />)} />
         <Route path="/sales" element={guard('sales:view', <SalesList />)} />
@@ -123,6 +129,7 @@ export default function App() {
         <Route path="/fuel/inventory/purchasing/audits" element={guard('fuel_audits:view', <FuelAudits />)} />
         <Route path="/fuel/inventory/purchasing/audit-config" element={guard('fuel_audit_config:view', <FuelAuditConfig />)} />
         <Route path="/fuel/inventory/purchasing/invoice-entry" element={guard('invoice_entry_service:view', <InvoiceEntryService />)} />
+        <Route path="/fuel/inventory/purchasing/daily-quotations" element={guard('daily_quotations:view', <DailyQuotations />)} />
       </Route>
 
       <Route path="/login" element={<Login />} />

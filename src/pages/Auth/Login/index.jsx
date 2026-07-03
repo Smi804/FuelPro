@@ -9,7 +9,7 @@ export default function Login() {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/dashboard';
   const [email, setEmail] = useState('admin@gmail.com');
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
@@ -99,11 +99,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="auth-hint" style={{ marginTop: 14, fontSize: 12.5, color: 'var(--text-muted)', textAlign: 'center' }}>
-          Demo mode — sign in with <strong>admin@gmail.com</strong> / <strong>admin123</strong>
-          <br />
-          (Super Admin: superadmin@gmail.com / admin123)
-        </div>
+       
 
         <div className="auth-divider">or continue with</div>
         <SocialButtons />

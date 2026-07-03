@@ -51,7 +51,7 @@ function NavNode({ item, pathname, depth }) {
     if (!isModuleEnabled(item.module)) return <LockedRow item={item} depth={depth} />;
     const cls = depth === 0 ? 'nav-link' : 'nav-sublink';
     return (
-      <NavLink to={item.to} end={item.to === '/'} className={({ isActive }) => cls + (isActive ? ' active' : '')}>
+      <NavLink to={item.to} end={item.to === '/dashboard'} className={({ isActive }) => cls + (isActive ? ' active' : '')}>
         {depth === 0 && <Icon name={item.icon} />}
         <span className="nav-text">{item.text}</span>
         {item.badge && <span className={`badge ${item.badge.cls}`}>{item.badge.text}</span>}

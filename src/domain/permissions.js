@@ -19,10 +19,12 @@ export const ENABLED_MODULES = new Set([
   'fuel_inventory',
   'items',
   'brands',
+  'taxes',
   'purchase_invoices',
   'fuel_audits',
   'fuel_audit_config',
   'invoice_entry_service',
+  'daily_quotations',
   'persons'
 ]);
 
@@ -35,6 +37,7 @@ export const MODULES = [
   { key: 'stations', label: 'Stations' },
   { key: 'items', label: 'Items' },
   { key: 'brands', label: 'Brands' },
+  { key: 'taxes', label: 'Taxes' },
   { key: 'sales', label: 'Sales' },
   { key: 'invoices', label: 'Invoices' },
   { key: 'meter_readings', label: 'Meter Readings' },
@@ -64,7 +67,8 @@ export const MODULES = [
   { key: 'purchase_invoices', label: 'Purchase Invoices' },
   { key: 'fuel_audits', label: 'Fuel Audits' },
   { key: 'fuel_audit_config', label: 'Fuel Audit Config' },
-  { key: 'invoice_entry_service', label: 'Invoice Entry Service' }
+  { key: 'invoice_entry_service', label: 'Invoice Entry Service' },
+  { key: 'daily_quotations', label: 'Daily Quotations' }
 ];
 
 const ALL = ['view', 'create', 'update', 'delete', 'export', 'approve'];
@@ -76,17 +80,18 @@ const CRUD_EXPORT = ['view', 'create', 'update', 'delete', 'export'];
 // module -> actions for each role (super_admin omitted; gets all).
 export const PERMISSION_MATRIX = {
   [ROLES.BUSINESS_OWNER]: {
-    dashboard: READ, stations: CRUD_EXPORT, items: CRUD_EXPORT, brands: CRUD_EXPORT, sales: READ_EXPORT, invoices: READ_EXPORT,
+    dashboard: READ, stations: CRUD_EXPORT, items: CRUD_EXPORT, brands: CRUD_EXPORT, taxes: CRUD_EXPORT, sales: READ_EXPORT, invoices: READ_EXPORT,
     meter_readings: READ, products: CRUD_EXPORT, tanks: READ_EXPORT, pumps: READ_EXPORT,
     stock_entries: READ_EXPORT, stock_transfers: CRUD_EXPORT, persons: CRUD_EXPORT, customers: CRUD_EXPORT,
     suppliers: CRUD_EXPORT, employees: CRUD_EXPORT, shifts: READ_EXPORT, expenses: CRUD_EXPORT,
     accounting: READ_EXPORT, reports: READ_EXPORT, notifications: READ, users: CRUD_EXPORT,
     roles: READ, permissions: READ, settings: ['view', 'update'], audit_logs: READ_EXPORT,
     atg: CRUD_EXPORT, fuel_sales: READ_EXPORT, fuel_pricing: CRUD_EXPORT, fuel_inventory: CRUD_EXPORT,
-    purchase_invoices: CRUD_EXPORT, fuel_audits: CRUD_EXPORT, fuel_audit_config: CRUD_EXPORT, invoice_entry_service: CRUD_EXPORT
+    purchase_invoices: CRUD_EXPORT, fuel_audits: CRUD_EXPORT, fuel_audit_config: CRUD_EXPORT, invoice_entry_service: CRUD_EXPORT,
+    daily_quotations: CRUD_EXPORT
   },
   [ROLES.STATION_MANAGER]: {
-    dashboard: READ, stations: READ_EXPORT, items: CRUD_EXPORT, brands: READ, sales: CRUD_EXPORT, invoices: CRUD_EXPORT,
+    dashboard: READ, stations: READ_EXPORT, items: CRUD_EXPORT, brands: READ, taxes: CRUD_EXPORT, sales: CRUD_EXPORT, invoices: CRUD_EXPORT,
     meter_readings: CRUD, products: READ, tanks: CRUD_EXPORT, pumps: CRUD_EXPORT,
     stock_entries: CRUD_EXPORT, stock_transfers: ['view', 'create', 'approve'], persons: CRUD_EXPORT, customers: CRUD_EXPORT,
     suppliers: READ_EXPORT, employees: CRUD_EXPORT, shifts: ['view', 'create', 'update', 'approve', 'export'],
@@ -94,17 +99,17 @@ export const PERMISSION_MATRIX = {
     settings: READ, audit_logs: READ,
     atg: ['view', 'update', 'export'], fuel_sales: READ_EXPORT, fuel_pricing: READ, fuel_inventory: CRUD_EXPORT,
     purchase_invoices: CRUD_EXPORT, fuel_audits: ['view', 'create', 'update', 'approve', 'export'],
-    fuel_audit_config: READ, invoice_entry_service: READ
+    fuel_audit_config: READ, invoice_entry_service: READ, daily_quotations: CRUD_EXPORT
   },
   [ROLES.ACCOUNTANT]: {
-    dashboard: READ, stations: READ, items: READ_EXPORT, brands: READ, sales: READ_EXPORT, invoices: ['view', 'update', 'export', 'approve'],
+    dashboard: READ, stations: READ, items: READ_EXPORT, brands: READ, taxes: CRUD_EXPORT, sales: READ_EXPORT, invoices: ['view', 'update', 'export', 'approve'],
     meter_readings: READ, products: READ, tanks: READ, pumps: READ, stock_entries: READ_EXPORT,
     stock_transfers: READ, persons: CRUD_EXPORT, customers: READ_EXPORT, suppliers: CRUD_EXPORT, employees: READ,
     shifts: READ_EXPORT, expenses: CRUD_EXPORT, accounting: CRUD_EXPORT, reports: READ_EXPORT,
     notifications: READ, settings: READ, audit_logs: READ_EXPORT,
     atg: READ, fuel_sales: READ_EXPORT, fuel_pricing: READ, fuel_inventory: READ,
     purchase_invoices: ['view', 'update', 'export', 'approve'], fuel_audits: READ_EXPORT,
-    fuel_audit_config: READ, invoice_entry_service: READ
+    fuel_audit_config: READ, invoice_entry_service: READ, daily_quotations: CRUD_EXPORT
   },
   [ROLES.CASHIER]: {
     dashboard: READ, stations: READ, items: READ, sales: ['view', 'create'], invoices: ['view', 'create'],

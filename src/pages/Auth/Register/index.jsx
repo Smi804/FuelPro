@@ -14,7 +14,7 @@ export default function Register() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            navigate('/');
+            navigate('/dashboard');
           }}
         >
           <div className="form-group">

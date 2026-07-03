@@ -4,7 +4,7 @@
 export const NAV = [
   {
     label: 'Overview',
-    items: [{ key: 'dashboard', to: '/', text: 'Dashboard', icon: 'dashboard', module: 'dashboard' }]
+    items: [{ key: 'dashboard', to: '/dashboard', text: 'Dashboard', icon: 'dashboard', module: 'dashboard' }]
   },
   {
     label: 'Operations',
@@ -53,7 +53,8 @@ export const NAV = [
     label: 'Catalog',
     items: [
       { key: 'items', to: '/items', text: 'Items', icon: 'inventory', module: 'items' },
-      { key: 'brands', to: '/brands', text: 'Brands', icon: 'tag', module: 'brands' }
+      { key: 'brands', to: '/brands', text: 'Brands', icon: 'tag', module: 'brands' },
+      { key: 'taxes', to: '/taxes', text: 'Taxes', icon: 'price', module: 'taxes' }
     ]
   },
   {
@@ -70,10 +71,11 @@ export const NAV = [
           {
             text: 'Purchasing',
             children: [
-              { key: 'fuel-pi', to: '/fuel/inventory/purchasing/invoices', text: 'Purchase Invoices', module: 'purchase_invoices' },
+              // { key: 'fuel-pi', to: '/fuel/inventory/purchasing/invoices', text: 'Purchase Invoices', module: 'purchase_invoices' },
               { key: 'fuel-audits', to: '/fuel/inventory/purchasing/audits', text: 'Fuel Audits', module: 'fuel_audits' },
               { key: 'fuel-audit-config', to: '/fuel/inventory/purchasing/audit-config', text: 'Fuel Audit Config', module: 'fuel_audit_config' },
-              { key: 'fuel-ies', to: '/fuel/inventory/purchasing/invoice-entry', text: 'Invoice Entry Service', module: 'invoice_entry_service' }
+              { key: 'fuel-ies', to: '/fuel/inventory/purchasing/invoice-entry', text: 'Invoice Entry Service', module: 'invoice_entry_service' },
+              { key: 'fuel-dq', to: '/fuel/inventory/purchasing/daily-quotations', text: 'Daily Quotations', module: 'daily_quotations' }
             ]
           },
           // { key: 'fuel-inv-reports', to: '/fuel/inventory/reports', text: 'Reports', module: 'fuel_inventory' },
@@ -82,10 +84,10 @@ export const NAV = [
       }
     ]
   },
-  // {
-  //   label: 'People',
-  //   items: [{ key: 'persons', to: '/persons', text: 'Persons', icon: 'users', module: 'persons' }]
-  // },
+  {
+    label: 'People',
+    items: [{ key: 'persons', to: '/persons', text: 'Persons', icon: 'users', module: 'persons' }]
+  },
   // {
   //   label: 'Finance',
   //   items: [

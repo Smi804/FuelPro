@@ -32,7 +32,7 @@ export default function Settings() {
               <FormField name="orgName" label="Organization name" value={v.orgName} onChange={set} required />
               <div className="form-row">
                 <FormField name="currency" label="Currency" type="select" value={v.currency} onChange={set}
-                  options={[{ value: 'EUR', label: 'EUR (€)' }, { value: 'USD', label: 'USD ($)' }, { value: 'GBP', label: 'GBP (£)' }]} />
+                  options={[{ value: 'EUR', label: 'EUR ($)' }, { value: 'USD', label: 'USD ($)' }, { value: 'GBP', label: 'GBP (£)' }]} />
                 <FormField name="timezone" label="Timezone" type="select" value={v.timezone} onChange={set}
                   options={[{ value: 'Europe/Riga', label: 'Europe/Riga' }, { value: 'UTC', label: 'UTC' }, { value: 'Europe/London', label: 'Europe/London' }]} />
               </div>

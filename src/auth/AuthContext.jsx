@@ -17,6 +17,14 @@ function readStoredStation() {
   }
 }
 
+function writeStoredStation(id) {
+  try {
+    localStorage.setItem(STATION_KEY, id);
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
 function readStoredUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);
@@ -32,15 +40,12 @@ export function AuthProvider({ children }) {
   const [activeStationId, setActiveStationId] = useState(readStoredStation);
   const [stations, setStations] = useState([]);
 
-  // Persist the active station so it survives reloads and the API client can
-  // attach it (Station-Id header) to every request.
-  useEffect(() => {
-    try {
-      localStorage.setItem(STATION_KEY, activeStationId);
-    } catch {
-      /* storage unavailable — ignore */
-    }
-  }, [activeStationId]);
+  // Keep localStorage in sync immediately so API calls on the same tick as a
+  // topbar station change read the correct Station-Id (not only after useEffect).
+  const changeActiveStation = useCallback((id) => {
+    writeStoredStation(id);
+    setActiveStationId(id);
+  }, []);
 
   // Keep the stored user in sync with memory (e.g. after a role switch).
   useEffect(() => {
@@ -80,6 +85,7 @@ export function AuthProvider({ children }) {
       /* ignore */
     }
     setUser(nextUser);
+    writeStoredStation('all');
     setActiveStationId('all');
   }, []);
 
@@ -133,6 +139,7 @@ export function AuthProvider({ children }) {
       /* ignore */
     }
     setUser(null);
+    writeStoredStation('all');
     setActiveStationId('all');
   }, []);
 
@@ -150,9 +157,9 @@ export function AuthProvider({ children }) {
       can,
       stations,
       activeStationId,
-      setActiveStationId
+      setActiveStationId: changeActiveStation
     }),
-    [user, setRole, login, logout, can, stations, activeStationId]
+    [user, setRole, login, logout, can, stations, activeStationId, changeActiveStation]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

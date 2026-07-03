@@ -60,21 +60,21 @@ export const stationFields = [
   { name: 'country', label: 'Country' },
 
   { name: 'phone', label: 'Phone' },
-  { name: 'email', label: 'Email', type: 'email', validate: (v) => (v && !/^[^@]+@[^@]+\.[^@]+$/.test(v) ? 'Invalid email' : null) },
-  { name: 'latitude', label: 'Latitude', type: 'number', step: 'any', validate: (v) => (v !== '' && (v < -90 || v > 90) ? 'Must be between -90 and 90' : null) },
-  { name: 'longitude', label: 'Longitude', type: 'number', step: 'any', validate: (v) => (v !== '' && (v < -180 || v > 180) ? 'Must be between -180 and 180' : null) },
-  { name: 'timezone', label: 'Timezone', placeholder: 'e.g. America/Chicago' },
+  // { name: 'email', label: 'Email', type: 'email', validate: (v) => (v && !/^[^@]+@[^@]+\.[^@]+$/.test(v) ? 'Invalid email' : null) },
+  // { name: 'latitude', label: 'Latitude', type: 'number', step: 'any', validate: (v) => (v !== '' && (v < -90 || v > 90) ? 'Must be between -90 and 90' : null) },
+  // { name: 'longitude', label: 'Longitude', type: 'number', step: 'any', validate: (v) => (v !== '' && (v < -180 || v > 180) ? 'Must be between -180 and 180' : null) },
+  // { name: 'timezone', label: 'Timezone', placeholder: 'e.g. America/Chicago' },
 
-  { name: 'fuel_unit', label: 'Fuel unit', type: 'select', options: FUEL_UNIT_OPTIONS, defaultValue: 'gallons' },
-  { name: 'inventory_method', label: 'Inventory method', type: 'select', options: INVENTORY_METHOD_OPTIONS, defaultValue: 'FIFO' },
-  { name: 'default_tax_rate', label: 'Default tax rate (%)', type: 'number', step: '0.01', min: 0 },
-  { name: 'low_fuel_threshold_percent', label: 'Low fuel threshold (%)', type: 'number', min: 0, validate: (v) => (v !== '' && (v < 0 || v > 100) ? 'Must be between 0 and 100' : null) },
-  { name: 'last_inspection_date', label: 'Last inspection date', type: 'date' },
+  // { name: 'fuel_unit', label: 'Fuel unit', type: 'select', options: FUEL_UNIT_OPTIONS, defaultValue: 'gallons' },
+  // { name: 'inventory_method', label: 'Inventory method', type: 'select', options: INVENTORY_METHOD_OPTIONS, defaultValue: 'FIFO' },
+  // { name: 'default_tax_rate', label: 'Default tax rate (%)', type: 'number', step: '0.01', min: 0 },
+  // { name: 'low_fuel_threshold_percent', label: 'Low fuel threshold (%)', type: 'number', min: 0, validate: (v) => (v !== '' && (v < 0 || v > 100) ? 'Must be between 0 and 100' : null) },
+  // { name: 'last_inspection_date', label: 'Last inspection date', type: 'date' },
 
-  { name: 'is_24_hours', label: 'Open 24 hours', type: 'checkbox' },
-  { name: 'shift_based_operation', label: 'Shift-based operation', type: 'checkbox' },
-  { name: 'auto_close_shift', label: 'Auto-close shift', type: 'checkbox' },
-  { name: 'epa_enabled', label: 'EPA enabled', type: 'checkbox' }
+  // { name: 'is_24_hours', label: 'Open 24 hours', type: 'checkbox' },
+  // { name: 'shift_based_operation', label: 'Shift-based operation', type: 'checkbox' },
+  // { name: 'auto_close_shift', label: 'Auto-close shift', type: 'checkbox' },
+  // { name: 'epa_enabled', label: 'EPA enabled', type: 'checkbox' }
 ];
 
 export { STATUS_OPTIONS };

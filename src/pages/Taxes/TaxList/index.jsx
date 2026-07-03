@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../../../components/PageHeader.jsx';
 import DataTable from '../../../components/crud/DataTable.jsx';
 import FilterBar from '../../../components/crud/FilterBar.jsx';
@@ -9,45 +9,30 @@ import SummaryCard from '../../../components/crud/SummaryCard.jsx';
 import StationRequired from '../../../components/crud/StationRequired.jsx';
 import { useAuth } from '../../../auth/AuthContext.jsx';
 import { showToast } from '../../../v4/toast.js';
-import { itemColumns, itemFields, STATUS_OPTIONS, TYPE_OPTIONS } from './columns.jsx';
-import { getItems, editItem, addItem, updateItem, deleteItem } from '../../../api/items.js';
-import { getBrandsDropDown } from '../../../api/brands.js';
+import { taxColumns, taxFields } from './columns.jsx';
+import { getTaxes, editTax, addTax, updateTax, deleteTax } from '../../../api/taxes.js';
 
 const RECORDS = 10;
 
-// UI sort key → backend colName. Relational columns aren't server-sortable.
-const COL_NAME = { name: 'name', type: 'type', sku: 'sku', status: 'status' };
+const COL_NAME = { code: 'code', description: 'description', price: 'price' };
 
-export default function ItemList() {
+export default function TaxList() {
   const { can, activeStationId } = useAuth();
   const hasStation = !!activeStationId && activeStationId !== 'all';
 
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
-  const [type, setType] = useState('');
-  const [status, setStatus] = useState('');
+  const [sort, setSort] = useState({ key: 'code', dir: 'asc' });
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
-  const [brands, setBrands] = useState([]);
 
-  const canCreate = can('items:create');
-  const canUpdate = can('items:update');
-  const canDelete = can('items:delete');
-  const canExport = can('items:export');
-
-  // Brand options for the form — scoped to the active station.
-  useEffect(() => {
-    if (!hasStation) {
-      setBrands([]);
-      return;
-    }
-    getBrandsDropDown({ station_id: activeStationId })
-      .then(setBrands)
-      .catch(() => setBrands([]));
-  }, [hasStation, activeStationId]);
+  const canCreate = can('taxes:create');
+  const canUpdate = can('taxes:update');
+  const canDelete = can('taxes:delete');
+  const canExport = can('taxes:export');
 
   const load = useCallback(async () => {
     if (!hasStation) {
@@ -58,17 +43,24 @@ export default function ItemList() {
     }
     setLoading(true);
     try {
-      const res = await getItems({ records: RECORDS, pageNo: page + 1, colName: COL_NAME[sort.key] || sort.key, sort: sort.dir, type, status, station_id: activeStationId });
+      const res = await getTaxes({
+        records: RECORDS,
+        pageNo: page + 1,
+        colName: COL_NAME[sort.key] || sort.key,
+        sort: sort.dir,
+        code,
+        station_id: activeStationId
+      });
       setRows(res.rows);
       setTotal(res.total);
     } catch (err) {
-      showToast(err?.message || 'Failed to load items', { variant: 'danger' });
+      showToast(err?.message || 'Failed to load taxes', { variant: 'danger' });
       setRows([]);
       setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [hasStation, activeStationId, page, sort, type, status]);
+  }, [hasStation, activeStationId, page, sort, code]);
 
   useEffect(() => {
     setPage(0);
@@ -83,40 +75,35 @@ export default function ItemList() {
     setPage(0);
   };
 
-  const changeType = (v) => {
-    setType(v);
+  const changeCode = (v) => {
+    setCode(v);
     setPage(0);
   };
-  const changeStatus = (v) => {
-    setStatus(v);
-    setPage(0);
-  };
-
-  const fields = useMemo(() => itemFields({ brands }), [brands]);
 
   const openEdit = async (row) => {
     try {
-      const full = await editItem(row.id);
+      const full = await editTax(row.id, { station_id: activeStationId });
       setModal({ mode: 'edit', row: full });
     } catch (err) {
-      showToast(err?.message || 'Failed to load item', { variant: 'danger' });
+      showToast(err?.message || 'Failed to load tax', { variant: 'danger' });
     }
   };
 
   const save = async (values) => {
-    if (modal.mode === 'create') await addItem(values);
-    else await updateItem(modal.row.id, values);
+    const payload = { ...values, station_id: activeStationId };
+    if (modal.mode === 'create') await addTax(payload);
+    else await updateTax(modal.row.id, payload);
     await load();
   };
 
   const remove = async (row) => {
     try {
-      await deleteItem(row.id);
-      showToast('Item deleted', { variant: 'success' });
+      await deleteTax(row.id, { station_id: activeStationId });
+      showToast('Tax deleted', { variant: 'success' });
       if (rows.length === 1 && page > 0) setPage((p) => p - 1);
       else await load();
     } catch (err) {
-      showToast(err?.message || 'Failed to delete item', { variant: 'danger' });
+      showToast(err?.message || 'Failed to delete tax', { variant: 'danger' });
     }
   };
 
@@ -128,26 +115,24 @@ export default function ItemList() {
   };
 
   const summaryCards = [
-    { icon: 'inventory', tone: 'teal', label: 'Total items', value: total },
-    { icon: 'fuel', tone: 'blue', label: 'Fuel', value: rows.filter((r) => r.type === 'FUEL').length, subtext: 'this page' },
-    { icon: 'shop', tone: 'green', label: 'Retail', value: rows.filter((r) => r.type === 'RETAIL').length, subtext: 'this page' },
-    { icon: 'tag', tone: 'red', label: 'Inactive', value: rows.filter((r) => Number(r.status) === 0).length, subtext: 'this page' }
+    { icon: 'price', tone: 'teal', label: 'Total taxes', value: total },
+    { icon: 'price', tone: 'blue', label: 'On this page', value: rows.length, subtext: 'taxes' }
   ];
 
   return (
     <div className="page-wrapper">
       <PageHeader
         pretitle="Catalog"
-        title="Items"
+        title="Taxes"
         actions={
           <>
-            {canExport && hasStation && <ExportButtons columns={itemColumns} rows={rows} filename="items" />}
+            {canExport && hasStation && <ExportButtons columns={taxColumns} rows={rows} filename="taxes" />}
             {canCreate && (
               <button className="btn btn-primary" disabled={!hasStation} onClick={() => setModal({ mode: 'create', row: null })}>
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M4 8h8M8 4v8" />
                 </svg>
-                Add item
+                Add tax
               </button>
             )}
           </>
@@ -155,7 +140,7 @@ export default function ItemList() {
       />
 
       {!hasStation ? (
-        <StationRequired resource="items" />
+        <StationRequired resource="taxes" />
       ) : (
         <>
           <div className="row col-4">
@@ -164,17 +149,12 @@ export default function ItemList() {
             ))}
           </div>
 
-          <FilterBar
-            filters={[
-              { label: 'Type', value: type, onChange: changeType, options: TYPE_OPTIONS },
-              { label: 'Status', value: status, onChange: changeStatus, options: STATUS_OPTIONS }
-            ]}
-          />
+          <FilterBar search={{ value: code, onChange: changeCode, placeholder: 'Filter by code…' }} />
 
           <DataTable
             serverMode
-            title="All items"
-            columns={itemColumns}
+            title="All taxes"
+            columns={taxColumns}
             rows={rows}
             totalRows={total}
             page={page}
@@ -192,21 +172,20 @@ export default function ItemList() {
 
       {modal && (
         <FormModal
-          title={modal.mode === 'create' ? 'Add item' : 'Edit item'}
-          fields={fields}
+          title={modal.mode === 'create' ? 'Add tax' : 'Edit tax'}
+          fields={taxFields}
           initialValues={modal.row || {}}
-          size="lg"
           onClose={() => setModal(null)}
           onSubmit={save}
           submitLabel={modal.mode === 'create' ? 'Create' : 'Save changes'}
-          successMessage={modal.mode === 'create' ? 'Item created' : 'Changes saved'}
+          successMessage={modal.mode === 'create' ? 'Tax created' : 'Changes saved'}
         />
       )}
 
       {confirm && (
         <ConfirmDialog
-          title="Delete item?"
-          body="Items referenced by orders or invoices can't be deleted."
+          title="Delete tax?"
+          body={`Delete tax "${confirm.row.code}"? This cannot be undone.`}
           confirmLabel="Delete"
           onConfirm={() => remove(confirm.row)}
           onClose={() => setConfirm(null)}

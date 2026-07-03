@@ -187,7 +187,7 @@ export function ReportsTab({ station }) {
       <ChartCard title="Fuel consumption" subtitle="Litres dispensed">
         <AreaChart points={DAILY_SALES} id={`rep-${station.id}`} color="var(--yellow)" />
       </ChartCard>
-      <ChartCard title="Revenue" subtitle="Daily revenue (€)">
+      <ChartCard title="Revenue" subtitle="Daily revenue ($)">
         <AreaChart points={DAILY_SALES.map((d) => d * 1.4)} id={`rev-${station.id}`} color="var(--green)" />
       </ChartCard>
     </div>
