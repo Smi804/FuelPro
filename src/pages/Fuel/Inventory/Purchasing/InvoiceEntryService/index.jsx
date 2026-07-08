@@ -40,7 +40,7 @@ const TABS = [
   { key: 'uploaded', label: 'Uploaded Invoices' },
   { key: 'bols', label: 'Uploaded BOLs' },
   { key: 'errors', label: 'Invoices Error' },
-  { key: 'bank', label: 'Upload Bank Statement' }
+  // { key: 'bank', label: 'Upload Bank Statement' }
 ];
 
 const logColumns = [
@@ -409,7 +409,7 @@ export default function InvoiceEntryService() {
         />
       )}
 
-      {modal === 'bank' && (
+      {/* {modal === 'bank' && (
         <FormModal
           title="Upload bank statement"
           fields={bankFields}
@@ -418,7 +418,7 @@ export default function InvoiceEntryService() {
           submitLabel="Upload"
           successMessage="Statement uploaded"
         />
-      )}
+      )} */}
 
       {preview && (
         <Modal

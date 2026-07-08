@@ -14,7 +14,7 @@ export const NAV = [
         icon: 'fuel',
         children: [
           { key: 'station-list', to: '/stations', text: 'Station List', module: 'stations' },
-          { key: 'station-details', to: '/stations/current', text: 'Station Details', module: 'stations' }
+          // { key: 'station-details', to: '/stations/current', text: 'Station Details', module: 'stations' }
         ]
       },
       // {
