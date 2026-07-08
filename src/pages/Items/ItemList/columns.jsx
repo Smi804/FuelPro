@@ -35,8 +35,8 @@ export const itemColumns = [
     exportValue: (r) => r.name
   },
   { key: 'type', label: 'Type', render: (r) => <StatusBadge value={r.type} map={ITEM_TYPE} />, exportValue: (r) => r.type },
-  { key: 'sku', label: 'SKU', render: (r) => dash(r.sku), exportValue: (r) => r.sku || '' },
-  { key: 'category_name', label: 'Category', sortable: false, render: (r) => dash(r.category_name), exportValue: (r) => r.category_name || '' },
+  // { key: 'sku', label: 'SKU', render: (r) => dash(r.sku), exportValue: (r) => r.sku || '' },
+  // { key: 'category_name', label: 'Category', sortable: false, render: (r) => dash(r.category_name), exportValue: (r) => r.category_name || '' },
   { key: 'station_name', label: 'Station', sortable: false, render: (r) => dash(r.station_name), exportValue: (r) => r.station_name || '' },
   { key: 'status', label: 'Status', render: (r) => <StatusBadge value={r.status} map={ACTIVE_STATUS} />, exportValue: (r) => (r.status ? 'Active' : 'Inactive') }
 ];

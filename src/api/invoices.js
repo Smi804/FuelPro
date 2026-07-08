@@ -2,9 +2,10 @@
 // Station-scoped: the active station id is sent both as a `Station-Id` header
 // (by the client) and inside the multipart body.
 //
-//   GET  getInvoices  list invoices ([station_id], [type], [doc_type])
-//   GET  getInvoice   fetch one invoice with line items and taxes
-//   POST addInvoice   upload a supplier invoice (multipart/form-data with file)
+//   GET  getInvoices    list invoices ([station_id], [type], [doc_type])
+//   GET  getInvoice     fetch one invoice with line items and taxes
+//   POST addInvoice     upload a supplier invoice (multipart/form-data with file)
+//   POST updateInvoice  update an invoice (same fields as add, plus id)
 import { api, getStationId } from './client.js';
 import { USE_MOCK } from './config.js';
 import { delay } from './mock-utils.js';
@@ -168,19 +169,14 @@ export async function getInvoices({ station_id, type, doc_type } = {}) {
 }
 
 /**
- * Upload a supplier invoice as multipart/form-data.
- * @param {{ type, vendor, invoiceDate, dueDate, invoiceNumber, bolNo, docType, amount,
- *           file: { file: File }, children?: Array }} values
- *   `vendor` is the supplier person id. `children` are line items saved as
- *   `invoices_children[i][...]` with nested `taxes[j][tax_id|tax_rate|tax_amount]`.
+ * Build multipart body for add/update invoice.
+ * `vendor` is the supplier person id. `children` are line items saved as
+ * `invoices_children[i][...]` with nested `taxes[j][tax_id|tax_rate|tax_amount]`.
  */
-export async function addInvoice(values = {}) {
-  if (USE_MOCK) {
-    await delay();
-    return { status: 'ok', message: 'Invoice uploaded successfully' };
-  }
+function invoiceFormData(values = {}, { id } = {}) {
   const sid = getStationId();
   const fd = new FormData();
+  if (id != null) fd.append('id', id);
   if (sid) fd.append('station_id', sid);
   if (values.type != null) fd.append('type', values.type);
   if (values.vendor != null) fd.append('vendor_id', values.vendor);
@@ -192,7 +188,6 @@ export async function addInvoice(values = {}) {
   if (values.amount != null) fd.append('amount', values.amount);
   const f = values.file;
   if (f && typeof File !== 'undefined' && f.file instanceof File) fd.append('file', f.file, f.name);
-  // Manual line items → invoices_children[i][field] (Laravel array form).
   (Array.isArray(values.children) ? values.children : []).forEach((c, i) => {
     fd.append(`invoices_children[${i}][item_id]`, c.item_id ?? '');
     fd.append(`invoices_children[${i}][description]`, c.description ?? '');
@@ -205,7 +200,25 @@ export async function addInvoice(values = {}) {
       if (t.tax_amount != null && t.tax_amount !== '') fd.append(`invoices_children[${i}][taxes][${j}][tax_amount]`, t.tax_amount);
     });
   });
-  return assertOk(await api.post('addInvoice', fd));
+  return fd;
+}
+
+/** Upload a supplier invoice as multipart/form-data. */
+export async function addInvoice(values = {}) {
+  if (USE_MOCK) {
+    await delay();
+    return { status: 'ok', message: 'Invoice uploaded successfully' };
+  }
+  return assertOk(await api.post('addInvoice', invoiceFormData(values)));
+}
+
+/** Update an invoice — same fields as add, plus id; replaces all line items. */
+export async function updateInvoice(id, values = {}) {
+  if (USE_MOCK) {
+    await delay();
+    return { status: 'ok', message: 'Invoice updated successfully' };
+  }
+  return assertOk(await api.post('updateInvoice', invoiceFormData(values, { id })));
 }
 
 export { mapInvoice, mapInvoiceDetail };

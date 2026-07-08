@@ -11,7 +11,7 @@ import Toggle from '../../../../../components/Toggle.jsx';
 import { useAuth } from '../../../../../auth/AuthContext.jsx';
 import { showToast } from '../../../../../v4/toast.js';
 import { getPersonsDropDown } from '../../../../../api/persons.js';
-import { addInvoice as uploadInvoiceApi, getInvoices } from '../../../../../api/invoices.js';
+import { addInvoice as uploadInvoiceApi, getInvoice, getInvoices, updateInvoice } from '../../../../../api/invoices.js';
 import { printInvoiceEntriesPdf } from '../../../../../utils/invoiceEntriesPdf.js';
 import { getBols, editBol, addBol, updateBol, deleteBol } from '../../../../../api/bols.js';
 import InvoiceUploadModal from './InvoiceUploadModal.jsx';
@@ -92,7 +92,8 @@ export default function InvoiceEntryService() {
   const [uploaded, setUploaded] = useState([]);
   const [bols, setBols] = useState([]);
   const [statements, setStatements] = useState([]);
-  const [modal, setModal] = useState(null); // 'invoice' | 'bol' | 'bank' | null
+  const [modal, setModal] = useState(null); // 'bank' | null
+  const [invoiceModal, setInvoiceModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', invoice }
   const [bolModal, setBolModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', bol }
   const [bolConfirm, setBolConfirm] = useState(null);
   const [preview, setPreview] = useState(null); // { name, url, type }
@@ -131,9 +132,19 @@ export default function InvoiceEntryService() {
     loadBols();
   }, [loadInvoices, loadBols]);
 
-  const addInvoice = async (payload) => {
-    await uploadInvoiceApi(payload);
+  const saveInvoice = async (payload) => {
+    if (payload.id) await updateInvoice(payload.id, payload);
+    else await uploadInvoiceApi(payload);
     await loadInvoices();
+  };
+
+  const openEditInvoice = async (row) => {
+    try {
+      const full = await getInvoice(row.id, { station_id: activeStationId !== 'all' ? activeStationId : undefined });
+      setInvoiceModal({ mode: 'edit', invoice: full });
+    } catch (err) {
+      showToast(err?.message || 'Failed to load invoice', { variant: 'danger' });
+    }
   };
 
   const saveBol = async (payload) => {
@@ -223,10 +234,14 @@ export default function InvoiceEntryService() {
     }
   };
 
-  const invoiceRowActions = (row) => [
-    { label: 'View', onClick: () => setInvoiceView({ id: row.id }) },
-    { label: 'Print', onClick: () => openInvoicePdf(row) }
-  ];
+  const invoiceRowActions = (row) => {
+    const actions = [
+      { label: 'View', onClick: () => setInvoiceView({ id: row.id }) },
+      { label: 'Print', onClick: () => openInvoicePdf(row) }
+    ];
+    if (canUpdate) actions.unshift({ label: 'Edit', onClick: () => openEditInvoice(row) });
+    return actions;
+  };
 
   return (
     <div className="page-wrapper">
@@ -284,7 +299,7 @@ export default function InvoiceEntryService() {
           emptyText="No invoices uploaded yet."
           toolbar={
             canCreate && (
-              <button className="btn btn-primary btn-sm" onClick={() => setModal('invoice')}>
+              <button className="btn btn-primary btn-sm" onClick={() => setInvoiceModal({ mode: 'create' })}>
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M4 8h8M8 4v8" />
                 </svg>
@@ -363,13 +378,14 @@ export default function InvoiceEntryService() {
         />
       )}
 
-      {modal === 'invoice' && (
+      {invoiceModal && (
         <InvoiceUploadModal
           vendors={vendors}
           userId={user?.id}
           stationId={activeStationId}
-          onClose={() => setModal(null)}
-          onSubmit={addInvoice}
+          invoice={invoiceModal.mode === 'edit' ? invoiceModal.invoice : null}
+          onClose={() => setInvoiceModal(null)}
+          onSubmit={saveInvoice}
         />
       )}
 

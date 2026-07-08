@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Modal from '../../../../../components/Modal.jsx';
 import FormField from '../../../../../components/crud/FormField.jsx';
 import Toggle from '../../../../../components/Toggle.jsx';
 import { showToast } from '../../../../../v4/toast.js';
 import { getItemsDropDown } from '../../../../../api/items.js';
 import { getTaxesDropDown } from '../../../../../api/taxes.js';
-import { INVOICE_TYPE_OPTIONS, DOC_TYPE_OPTIONS } from '../../../../../data/mock/fuel.js';
+import { INVOICE_TYPE_OPTIONS } from '../../../../../data/mock/fuel.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (v) => Number(v) || 0;
@@ -38,29 +38,81 @@ const applyLineCalcs = (row) => {
   return { ...row, subtotal, taxes, tax_total, amount };
 };
 
+function invoiceToForm(inv) {
+  const b = inv ?? {};
+  return {
+    type: b.type || 'fuel',
+    vendor: b.vendor_id != null ? String(b.vendor_id) : '',
+    invoiceNumber: b.invoiceNumber || '',
+    bolNo: b.bolNo || '',
+    invoiceDate: b.invoiceDate ? String(b.invoiceDate).slice(0, 10) : today(),
+    dueDate: b.dueDate ? String(b.dueDate).slice(0, 10) : '',
+    amount: b.amount != null && b.amount !== '' ? String(b.amount) : '',
+    file: ''
+  };
+}
+
+function invoiceToChildren(inv) {
+  const rows = inv?.lines;
+  if (!Array.isArray(rows) || !rows.length) return [emptyLine()];
+  return rows.map((c) =>
+    applyLineCalcs({
+      item_id: String(c.item_id ?? ''),
+      quantity: c.quantity ?? '',
+      price: c.rate ?? '',
+      subtotal: '',
+      taxes: (c.taxes || []).map((t) => ({
+        tax_id: String(t.tax_id ?? ''),
+        tax_rate: t.tax_rate ?? '',
+        tax_amount: t.tax_amount ?? ''
+      })),
+      tax_total: '',
+      amount: ''
+    })
+  );
+}
+
+const invoiceDrafts = new Map();
+
+function sessionKey(invoice) {
+  return invoice?.id ? `edit:${invoice.id}` : 'create';
+}
+
+function readDraft(invoice) {
+  const saved = invoiceDrafts.get(sessionKey(invoice));
+  if (saved) return saved;
+  return {
+    values: invoiceToForm(invoice),
+    manual: Array.isArray(invoice?.lines) && invoice.lines.length > 0,
+    children: invoiceToChildren(invoice)
+  };
+}
+
 /**
- * Upload-invoice modal with optional manual line items (invoices_children).
+ * Create or edit an invoice with optional manual line items (invoices_children).
  * Each item can have multiple tax rows nested below it.
  */
-export default function InvoiceUploadModal({ vendors = [], userId, stationId, onClose, onSubmit }) {
-  const [values, setValues] = useState({
-    type: 'fuel',
-    vendor: '',
-    invoiceNumber: '',
-    bolNo: '',
-    invoiceDate: today(),
-    dueDate: '',
-    docType: '',
-    amount: '',
-    file: ''
-  });
-  const [manual, setManual] = useState(false);
-  const [children, setChildren] = useState([emptyLine()]);
+export default function InvoiceUploadModal({ vendors = [], userId, stationId, invoice = null, onClose, onSubmit }) {
+  const isEdit = !!invoice?.id;
+  const key = sessionKey(invoice);
+  const skipDraftSave = useRef(false);
+  const draft = readDraft(invoice);
+  const [values, setValues] = useState(draft.values);
+  const [manual, setManual] = useState(draft.manual);
+  const [children, setChildren] = useState(draft.children);
   const [items, setItems] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [errors, setErrors] = useState({});
   const [lineError, setLineError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (!skipDraftSave.current) {
+        invoiceDrafts.set(key, { values, manual, children });
+      }
+    };
+  }, [key, values, manual, children]);
 
   const set = (name, value) => {
     setValues((v) => ({ ...v, [name]: value }));
@@ -90,7 +142,18 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
 
   const setLine = (i, field, value) => updateLine(i, (r) => ({ ...r, [field]: value }));
 
+  const allTaxRows = (quantity) =>
+    taxes.map((meta) => ({
+      tax_id: meta.value,
+      tax_rate: meta.price,
+      tax_amount: calcTaxAmount(quantity, meta.price)
+    }));
+
   const setItemTax = (lineIdx, taxIdx, field, value) => {
+    if (field === 'tax_id' && value === '__all__') {
+      updateLine(lineIdx, (r) => ({ ...r, taxes: allTaxRows(r.quantity) }));
+      return;
+    }
     setChildren((rows) =>
       rows.map((r, idx) => {
         if (idx !== lineIdx) return r;
@@ -123,8 +186,7 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
   const childrenTotal = useMemo(() => round2(children.reduce((s, r) => s + num(r.amount), 0)), [children]);
   const childrenSubtotal = useMemo(() => round2(children.reduce((s, r) => s + num(r.subtotal), 0)), [children]);
   const childrenTax = useMemo(() => round2(children.reduce((s, r) => s + num(r.tax_total), 0)), [children]);
-  const amountNum = round2(num(values.amount));
-  const matches = manual ? Math.abs(childrenTotal - amountNum) < 0.01 : true;
+  const amountNum = round2(manual ? childrenTotal : num(values.amount));
 
   const validate = () => {
     const e = {};
@@ -133,9 +195,9 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
     if (!values.invoiceNumber) e.invoiceNumber = 'Invoice number is required';
     if (!values.invoiceDate) e.invoiceDate = 'Invoice date is required';
     if (!values.dueDate) e.dueDate = 'Due date is required';
-    if (!values.docType) e.docType = 'Document is required';
-    if (!values.amount || amountNum <= 0) e.amount = 'Amount is required';
-    if (!values.file) e.file = 'A PDF or image is required';
+    if (!manual && (!values.amount || amountNum <= 0)) e.amount = 'Amount is required';
+    if (!isEdit && !values.file) e.file = 'A PDF or image is required';
+    if (isEdit && !values.file && !invoice?.fileUrl) e.file = 'A PDF or image is required';
     setErrors(e);
 
     let lineMsg = '';
@@ -148,8 +210,8 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
         lineMsg = 'Each selected tax must have a calculated amount.';
       else if (rows.some((r) => !num(r.amount)))
         lineMsg = 'Each item line must have a total amount.';
-      else if (!matches)
-        lineMsg = `Line items total ${usd(childrenTotal)} but the invoice amount is ${usd(amountNum)}.`;
+      else if (childrenTotal <= 0)
+        lineMsg = 'Invoice amount must be greater than zero.';
     }
     setLineError(lineMsg);
     return Object.keys(e).length === 0 && !lineMsg;
@@ -160,7 +222,7 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
     if (!validate()) return;
     setSaving(true);
     try {
-      const payload = { ...values };
+      const payload = { ...values, docType: 'invoice', amount: amountNum, id: invoice?.id };
       if (manual) {
         payload.children = children
           .filter((r) => r.item_id || r.quantity || r.price || (r.taxes || []).length)
@@ -179,10 +241,12 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
           }));
       }
       await onSubmit(payload);
-      showToast('Invoice uploaded', { variant: 'success' });
+      skipDraftSave.current = true;
+      invoiceDrafts.delete(key);
+      showToast(isEdit ? 'Invoice updated' : 'Invoice uploaded', { variant: 'success' });
       onClose();
     } catch (err) {
-      showToast(err?.message || 'Failed to upload invoice', { variant: 'danger' });
+      showToast(err?.message || `Failed to ${isEdit ? 'update' : 'upload'} invoice`, { variant: 'danger' });
     } finally {
       setSaving(false);
     }
@@ -194,7 +258,7 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
 
   return (
     <Modal
-      title="Upload invoice"
+      title={isEdit ? 'Edit invoice' : 'Upload invoice'}
       size="lg"
       onClose={onClose}
       footer={
@@ -203,7 +267,7 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
             Cancel
           </button>
           <button type="submit" form="invoice-upload-form" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Uploading…' : 'Upload'}
+            {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Upload'}
           </button>
         </>
       }
@@ -216,15 +280,27 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
           <FormField name="bolNo" label="BOL No." value={values.bolNo} onChange={set} placeholder="e.g. BOL-12345" error={errors.bolNo} />
           <FormField name="invoiceDate" label="Invoice date" type="date" required value={values.invoiceDate} onChange={set} error={errors.invoiceDate} />
           <FormField name="dueDate" label="Due date" type="date" required value={values.dueDate} onChange={set} error={errors.dueDate} />
-          <FormField name="docType" label="Document" type="select" required value={values.docType} onChange={set} options={DOC_TYPE_OPTIONS} hint="Invoice, BOL or both" error={errors.docType} />
-          <FormField name="amount" label="Amount" type="number" min={0} step="0.01" required value={values.amount} onChange={set} error={errors.amount} />
-          <FormField name="file" label="Upload PDF / image" type="file" accept=".pdf,image/png,image/jpeg" required value={values.file} onChange={set} span={2} error={errors.file} />
+          {!manual && (
+            <FormField name="amount" label="Amount" type="number" min={0} step="0.01" required value={values.amount} onChange={set} error={errors.amount} />
+          )}
+          <FormField
+            name="file"
+            label={isEdit ? 'Replace file (optional)' : 'Upload PDF / image'}
+            type="file"
+            accept=".pdf,image/png,image/jpeg"
+            required={!isEdit && !invoice?.fileUrl}
+            value={values.file}
+            onChange={set}
+            span={2}
+            error={errors.file}
+            hint={isEdit && invoice?.fileName ? `Current: ${invoice.fileName}` : undefined}
+          />
         </div>
 
         <div className="form-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
           <div>
             <label className="form-label" style={{ marginBottom: 2 }}>Manual line items</label>
-            <div className="form-hint">Add items, then attach taxes below each item. Tax amount = quantity × tax value. Line total = subtotal + taxes.</div>
+            <div className="form-hint">Add items, then attach taxes below each item. Use &ldquo;Select all&rdquo; to apply every tax. Invoice amount is calculated from line totals.</div>
           </div>
           <Toggle on={manual} onChange={setManual} />
         </div>
@@ -282,6 +358,7 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
                         <div>
                           <select className="form-control" value={t.tax_id} onChange={(e) => setItemTax(i, ti, 'tax_id', e.target.value)}>
                             <option value="">Select tax…</option>
+                            {taxes.length > 0 && <option value="__all__">Select all</option>}
                             {taxes.map((opt) => (
                               <option key={opt.value} value={opt.value} disabled={(line.taxes || []).some((x, j) => j !== ti && String(x.tax_id) === String(opt.value))}>
                                 {opt.code} ({opt.price})
@@ -316,12 +393,8 @@ export default function InvoiceUploadModal({ vendors = [], userId, stationId, on
               <div style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Subtotal {usd(childrenSubtotal)}</span>
                 <span style={{ color: 'var(--text-muted)' }}>Tax {usd(childrenTax)}</span>
-                <span style={{ color: 'var(--text-muted)' }}>Lines total</span>
+                <span style={{ color: 'var(--text-muted)' }}>Invoice total</span>
                 <span className="cell-strong">{usd(childrenTotal)}</span>
-                <span style={{ color: 'var(--text-muted)' }}>/ Invoice {usd(amountNum)}</span>
-                <span className={'status ' + (matches ? 'status-green' : 'status-red')}>
-                  {matches ? 'Balanced' : `Δ ${usd(childrenTotal - amountNum)}`}
-                </span>
               </div>
             </div>
           </div>
