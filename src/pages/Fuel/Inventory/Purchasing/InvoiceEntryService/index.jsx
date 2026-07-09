@@ -191,9 +191,9 @@ export default function InvoiceEntryService() {
 
   const uploadedColumns = [
     { key: 'invoiceNumber', label: 'Invoice #', render: (r) => <span className="cell-strong">{r.invoiceNumber}</span> },
-    { key: 'type', label: 'Type', render: (r) => <StatusBadge value={r.type} map={INVOICE_TYPE} />, exportValue: (r) => r.type },
+    // { key: 'type', label: 'Type', render: (r) => <StatusBadge value={r.type} map={INVOICE_TYPE} />, exportValue: (r) => r.type },
     { key: 'vendor', label: 'Vendor' },
-    { key: 'docType', label: 'Document', render: (r) => <StatusBadge value={r.docType} map={DOC_TYPE} />, exportValue: (r) => r.docType },
+    // { key: 'docType', label: 'Document', render: (r) => <StatusBadge value={r.docType} map={DOC_TYPE} />, exportValue: (r) => r.docType },
     { key: 'amount', label: 'Amount', align: 'right', render: (r) => money(r.amount) },
     { key: 'fileName', label: 'File', sortable: false, render: fileCell(setPreview) },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge value={r.status} map={UPLOAD_STATUS} />, exportValue: (r) => r.status },

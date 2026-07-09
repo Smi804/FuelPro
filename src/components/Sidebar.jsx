@@ -112,6 +112,7 @@ export default function Sidebar({ open = false }) {
     <aside className={'sidebar' + (open ? ' open' : '')} aria-label="Primary navigation">
       <div className="sidebar-brand">
         <img src={`${import.meta.env.BASE_URL}images/fuelpro.png`} alt="Fuel Pro" className="brand-logo" />
+        <span className="brand-name">FuelPRO</span>
       </div>
       <nav className="sidebar-nav">
         {groups.map((group) => (

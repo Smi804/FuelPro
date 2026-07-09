@@ -58,9 +58,9 @@ const columns = [
             <span style={{ color: 'var(--text-muted)' }}> vs </span>
             {qty(b.bol_quantity)}
           </span>
-          <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+          {/* <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
             {b.invoice_quality || '—'} vs {b.bol_quality || '—'}
-          </span>
+          </span> */}
           {b.status === 'n/a' ? (
             <StatusBadge value="n/a" map={AUDIT_STATUS} />
           ) : b.status !== 'passed' ? (
@@ -93,7 +93,7 @@ const columns = [
           left={usd0(b.invoice_amount)}
           right={usd0(b.quoted_amount)}
           status={b.status}
-          delta={b.variance}
+          // delta={b.variance}
           deltaFmt={usd0}
         />
       );

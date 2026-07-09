@@ -120,7 +120,7 @@ export default function StationList() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Network"
+        // pretitle="Network"
         title="Stations"
         actions={
           <>
