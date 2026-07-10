@@ -246,7 +246,7 @@ export default function InvoiceEntryService() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Fuel · Purchasing"
+        pretitle="Fuel  "
         title="Invoice Entry"
        
       />

@@ -26,7 +26,7 @@ export default function FuelInventoryOverview() {
 
   return (
     <div className="page-wrapper">
-      <PageHeader pretitle="Fuel · Inventory" title="Overview" />
+      <PageHeader pretitle="Fuel  Inventory" title="Overview" />
       <div className="row col-4">
         <SummaryCard icon="inventory" tone="teal" label="Tanks" value={TANKS.length} />
         <SummaryCard icon="fuel" tone="blue" label="Total Capacity" value={`${(totalCap / 1000).toFixed(0)}k L`} />

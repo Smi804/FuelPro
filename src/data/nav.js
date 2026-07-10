@@ -52,9 +52,9 @@ export const NAV = [
   {
     label: 'Catalog',
     items: [
-      { key: 'items', to: '/items', text: 'Items', icon: 'inventory', module: 'items' },
-      { key: 'brands', to: '/brands', text: 'Brands', icon: 'tag', module: 'brands' },
-      { key: 'taxes', to: '/taxes', text: 'Taxes', icon: 'price', module: 'taxes' }
+      { key: 'items', to: '/items', text: 'Fuel Grades', icon: 'inventory', module: 'items' },
+      // { key: 'brands', to: '/brands', text: 'Brands', icon: 'tag', module: 'brands' },
+      // { key: 'taxes', to: '/taxes', text: 'Taxes', icon: 'price', module: 'taxes' }
     ]
   },
   {
@@ -67,17 +67,18 @@ export const NAV = [
         text: 'Fuel Inventory',
         icon: 'fuel',
         children: [
-          { key: 'fuel-inv-overview', to: '/fuel/inventory', text: 'Overview', module: 'fuel_inventory' },
-          {
-            text: 'Purchasing',
-            children: [
-              // { key: 'fuel-pi', to: '/fuel/inventory/purchasing/invoices', text: 'Purchase Invoices', module: 'purchase_invoices' },
-              { key: 'fuel-audits', to: '/fuel/inventory/purchasing/audits', text: 'Fuel Audits', module: 'fuel_audits' },
-              { key: 'fuel-audit-config', to: '/fuel/inventory/purchasing/audit-config', text: 'Fuel Audit Config', module: 'fuel_audit_config' },
-              { key: 'fuel-ies', to: '/fuel/inventory/purchasing/invoice-entry', text: 'Invoice Entry Service', module: 'invoice_entry_service' },
-              { key: 'fuel-dq', to: '/fuel/inventory/purchasing/daily-quotations', text: 'Daily Quotations', module: 'daily_quotations' }
-            ]
-          },
+          { key: 'fuel-audits', to: '/fuel/inventory/audits', text: 'Fuel Audits', module: 'fuel_audits' },
+          { key: 'fuel-audit-config', to: '/fuel/inventory/audit-config', text: 'Fuel Audit Config', module: 'fuel_audit_config' },
+          { key: 'fuel-ies', to: '/fuel/inventory/invoice-entry', text: 'Invoice Entry Service', module: 'invoice_entry_service' },
+          { key: 'fuel-dq', to: '/fuel/inventory/daily-quotations', text: 'Daily Quotations', module: 'daily_quotations' }
+          // { key: 'fuel-inv-overview', to: '/fuel/inventory', text: 'Overview', module: 'fuel_inventory' },
+          // {
+          //   text: 'Purchasing',
+          //   children: [
+          //     // { key: 'fuel-pi', to: '/fuel/inventory/invoices', text: 'Purchase Invoices', module: 'purchase_invoices' },
+             
+          //   ]
+          // },
           // { key: 'fuel-inv-reports', to: '/fuel/inventory/reports', text: 'Reports', module: 'fuel_inventory' },
           // { key: 'fuel-inv-settings', to: '/fuel/inventory/settings', text: 'Settings', module: 'fuel_inventory' }
         ]

@@ -40,7 +40,7 @@ export default function AtgManagement() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Fuel · ATG"
+        pretitle="Fuel  ATG"
         title="ATG Management"
         actions={
           <Can perm="atg:export">

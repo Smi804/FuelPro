@@ -38,7 +38,7 @@ const CompareCell = ({ left, right, status, delta, deltaFmt = qty }) => (
 );
 
 const columns = [
-  { key: 'srNo', label: 'Sr. No.', render: (r) => <span className="cell-strong">{r.srNo ?? '—'}</span> },
+  { key: 'srNo', label: 'Sr. No.', render: (r) => <span className="cell-strong font">{r.srNo ?? '—'}</span> },
   { key: 'date', label: 'Date' },
   { key: 'dueDate', label: 'Due date', render: (r) => r.dueDate || <span style={{ color: 'var(--text-muted)' }}>—</span> },
   { key: 'vendor', label: 'Vendor' },
@@ -100,23 +100,23 @@ const columns = [
     },
     exportValue: (r) => `${r.invoiceVsQuote.invoice_amount} vs ${r.invoiceVsQuote.quoted_amount}`
   },
-  {
-    key: 'atgAudit',
-    label: 'Invoice vs ATG',
-    sortable: false,
-    render: (r) => {
-      const b = r.invoiceVsAtg;
-      return (
-        <CompareCell
-          left={qty(b.invoice_quantity)}
-          right={qty(b.atg_quantity)}
-          status={b.status}
-          delta={b.variance}
-        />
-      );
-    },
-    exportValue: (r) => `${r.invoiceVsAtg.invoice_quantity} vs ${r.invoiceVsAtg.atg_quantity}`
-  },
+  // {
+  //   key: 'atgAudit',
+  //   label: 'Invoice vs ATG',
+  //   sortable: false,
+  //   render: (r) => {
+  //     const b = r.invoiceVsAtg;
+  //     return (
+  //       <CompareCell
+  //         left={qty(b.invoice_quantity)}
+  //         right={qty(b.atg_quantity)}
+  //         status={b.status}
+  //         delta={b.variance}
+  //       />
+  //     );
+  //   },
+  //   exportValue: (r) => `${r.invoiceVsAtg.invoice_quantity} vs ${r.invoiceVsAtg.atg_quantity}`
+  // },
   {
     key: 'debitAudit',
     label: 'Invoice vs Stmt',
@@ -217,7 +217,7 @@ export default function FuelAudits() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Fuel · Purchasing"
+        pretitle="Fuel  "
         title="Fuel Audits"
         actions={can('fuel_audits:export') && <ExportButtons columns={columns} rows={filtered} filename="fuel-audits" />}
       />

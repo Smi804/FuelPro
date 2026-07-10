@@ -16,7 +16,7 @@ export default function FuelInventorySettings() {
 
   return (
     <div className="page-wrapper">
-      <PageHeader pretitle="Fuel · Inventory" title="Settings" />
+      <PageHeader pretitle="Fuel  Inventory" title="Settings" />
       <form className="card" style={{ maxWidth: 620 }} onSubmit={save}>
         <div className="card-header"><div className="card-title">Fuel inventory settings</div></div>
         <div className="card-body">

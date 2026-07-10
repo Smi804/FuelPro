@@ -131,7 +131,7 @@ export default function DailyQuotations() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Fuel · Purchasing"
+        pretitle="Fuel  "
         title="Daily quotations"
         actions={
           <>

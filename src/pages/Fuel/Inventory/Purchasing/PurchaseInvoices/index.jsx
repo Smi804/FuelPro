@@ -35,7 +35,7 @@ export default function PurchaseInvoices() {
   return (
     <ResourcePage
       perm="purchase_invoices"
-      pretitle="Fuel · Purchasing"
+      pretitle="Fuel  "
       title="Purchase Invoices"
       data={[]}
       columns={columns}

@@ -57,7 +57,7 @@ export const stationFields = [
   { name: 'city', label: 'City' },
   { name: 'state', label: 'State' },
   { name: 'zip_code', label: 'ZIP code' },
-  { name: 'country', label: 'Country' },
+  // { name: 'country', label: 'Country' },
 
   { name: 'phone', label: 'Phone' },
   // { name: 'email', label: 'Email', type: 'email', validate: (v) => (v && !/^[^@]+@[^@]+\.[^@]+$/.test(v) ? 'Invalid email' : null) },

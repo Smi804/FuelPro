@@ -138,7 +138,7 @@ export default function ItemList() {
     <div className="page-wrapper">
       <PageHeader
         pretitle="Catalog"
-        title="Items"
+        title="Fuel Grades"
         actions={
           <>
             {canExport && hasStation && <ExportButtons columns={itemColumns} rows={rows} filename="items" />}

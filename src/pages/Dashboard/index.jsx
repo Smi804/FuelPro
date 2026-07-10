@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import PageHeader from '../../components/PageHeader.jsx';
 import SummaryCard from '../../components/crud/SummaryCard.jsx';
 import ChartCard from '../../components/crud/ChartCard.jsx';
-import { Donut, MultiLineChart } from '../../components/MiniCharts.jsx';
+import { Donut } from '../../components/MiniCharts.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { showToast } from '../../v4/toast.js';
 import { getDashboardData } from '../../api/dashboard.js';
+import PriceTrends from './components/PriceTrends.jsx';
 
 export default function Dashboard() {
   const { user, activeStationId } = useAuth();
@@ -45,15 +46,8 @@ export default function Dashboard() {
   const usd = (n) =>
     `$${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const qty = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
-  const p2 = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const supplierLabel = (r) => r?.supplier_name || (r?.supplier_id != null ? `Supplier #${r.supplier_id}` : '—');
   const itemLabel = (r) => r?.item_name || (r?.item_id != null ? `Item #${r.item_id}` : '—');
-  const shortItem = (name = '') => {
-    const words = String(name).trim().split(/\s+/);
-    return words.length > 3 ? `${words.slice(0, 3).join(' ')}...` : name;
-  };
-  const moneyOrDash = (v) => (v == null ? '—' : usd(v));
-  const numberOrDash = (v) => (v == null ? '—' : p2(v));
 
   const totals = [
     { icon: 'wallet', tone: 'teal', label: 'Total Invoice Amount', value: usd(summary.total_invoice_amount), subtext: 'From invoices' },
@@ -66,24 +60,6 @@ export default function Dashboard() {
   const trendRows = dashboard?.weekly_price_trends || [];
   const compareRows = dashboard?.supplier_price_comparison || [];
   const chartColors = ['var(--blue)', 'var(--green)', 'var(--purple)', 'var(--yellow)', 'var(--teal)', 'var(--red)'];
-
-  const trendLabels = useMemo(() => [...new Set(trendRows.map((r) => r.date).filter(Boolean))].sort(), [trendRows]);
-  const trendSeries = useMemo(() => {
-    if (!trendLabels.length) return [];
-    const buckets = trendRows.reduce((acc, row) => {
-      const key = `${supplierLabel(row)} - ${shortItem(itemLabel(row))}`;
-      if (!acc[key]) acc[key] = {};
-      acc[key][row.date] = Number(row.avg_price) || 0;
-      return acc;
-    }, {});
-    return Object.entries(buckets)
-      .slice(0, 4)
-      .map(([key, byDate], i) => ({
-        label: key,
-        color: chartColors[i % chartColors.length],
-        data: trendLabels.map((d) => byDate[d] ?? 0)
-      }));
-  }, [trendRows, trendLabels]);
 
   const purchasedBySupplier = useMemo(() => {
     const totalsBySupplier = compareRows.reduce((acc, row) => {
@@ -114,17 +90,6 @@ export default function Dashboard() {
     ];
   }, [compareRows]);
 
-  const recentCompareRows = useMemo(() => {
-    return [...compareRows]
-      .sort((a, b) => {
-        const ad = String(a.invoice_date || '');
-        const bd = String(b.invoice_date || '');
-        if (ad !== bd) return bd.localeCompare(ad);
-        return Number(b.invoice_id || 0) - Number(a.invoice_id || 0);
-      })
-      .slice(0, 20);
-  }, [compareRows]);
-
   return (
     <div className="page-wrapper">
       <PageHeader pretitle={`Welcome back, ${user.name.split(' ')[0]}`} title="Dashboard" />
@@ -136,29 +101,9 @@ export default function Dashboard() {
       </div>
 
       <div className="row col-2">
-        <ChartCard title="Weekly price trends (graph)" subtitle="Avg quoted price by supplier-item" height="auto">
-          {loading ? (
-            <div className="form-hint">Loading dashboard data…</div>
-          ) : !trendSeries.length ? (
-            <div className="form-hint">No trend data for chart.</div>
-          ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div style={{ minHeight: 220 }}>
-                <MultiLineChart series={trendSeries} labels={trendLabels} id="dashboard-weekly-trends" formatY={usd} />
-              </div>
-              <div style={{ display: 'grid', gap: 6 }}>
-                {trendSeries.map((s) => (
-                  <div key={s.label} style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: s.color, marginRight: 6 }} />
-                    {s.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </ChartCard>
+        <PriceTrends rows={trendRows} loading={loading} />
 
-        <ChartCard title="Comparison split " subtitle="Purchased amount distribution" height="auto">
+        <ChartCard title="Comparison split" subtitle="Purchased amount distribution" height="auto">
           {loading ? (
             <div className="form-hint">Loading dashboard data…</div>
           ) : !purchasedBySupplier.length ? (
@@ -184,7 +129,7 @@ export default function Dashboard() {
         <div className="card-header">
           <div>
             <div className="card-title">Supplier prices today</div>
-            <div className="card-subtitle">Average, minimum and maximum quoted prices for today</div>
+            <div className="card-subtitle">Average quoted prices for today</div>
           </div>
         </div>
         <div className="card-body" style={{ overflowX: 'auto' }}>
@@ -200,8 +145,6 @@ export default function Dashboard() {
                   <th>Supplier</th>
                   <th>Item</th>
                   <th style={{ textAlign: 'right' }}>Price</th>
-                  {/* <th style={{ textAlign: 'right' }}>Min</th> */}
-                  {/* <th style={{ textAlign: 'right' }}>Max</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -211,8 +154,6 @@ export default function Dashboard() {
                     <td>{supplierLabel(r)}</td>
                     <td>{itemLabel(r)}</td>
                     <td style={{ textAlign: 'right' }}>{usd(r.avg_price)}</td>
-                      {/* <td style={{ textAlign: 'right' }}>{usd(r.min_price)}</td> */}
-                      {/* <td style={{ textAlign: 'right' }}>{usd(r.max_price)}</td> */}
                   </tr>
                 ))}
               </tbody>
@@ -220,67 +161,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
-      {/* <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Supplier price comparison</div>
-            <div className="card-subtitle">Invoice price vs same-day quoted price</div>
-          </div>
-        </div>
-        <div className="card-body" style={{ overflowX: 'auto' }}>
-          {loading ? (
-            <div className="form-hint">Loading dashboard data…</div>
-          ) : recentCompareRows.length === 0 ? (
-            <div className="form-hint">No supplier comparison records found.</div>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Invoice</th>
-                  <th>Date</th>
-                  <th>Supplier</th>
-                  <th>Item</th>
-                  <th style={{ textAlign: 'right' }}>Qty</th>
-                  <th style={{ textAlign: 'right' }}>Invoice Price</th>
-                  <th style={{ textAlign: 'right' }}>Quoted Price</th>
-                  <th style={{ textAlign: 'right' }}>Variance</th>
-                  <th style={{ textAlign: 'right' }}>Purchased Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentCompareRows.map((r, i) => (
-                  <tr key={`${r.invoice_id}-${r.supplier_id}-${r.item_id}-${i}`}>
-                    <td>{r.invoice_id ?? '—'}</td>
-                    <td>{r.invoice_date || '—'}</td>
-                    <td>{supplierLabel(r)}</td>
-                    <td>{itemLabel(r)}</td>
-                    <td style={{ textAlign: 'right' }}>{qty(r.quantity)}</td>
-                    <td style={{ textAlign: 'right' }}>{usd(r.invoice_price)}</td>
-                    <td style={{ textAlign: 'right' }}>{moneyOrDash(r.quoted_price)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {r.price_variance == null ? (
-                        '—'
-                      ) : (
-                        <span className={'status ' + (Number(r.price_variance) > 0 ? 'status-red' : 'status-green')}>
-                          {Number(r.price_variance) > 0 ? '+' : ''}
-                          {numberOrDash(r.price_variance)}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>{usd(r.purchased_amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-        {!loading && compareRows.length > recentCompareRows.length && (
-          <div className="form-hint" style={{ padding: '0 16px 14px' }}>
-            Showing latest {recentCompareRows.length} rows out of {compareRows.length}.
-          </div>
-        )}
-      </div> */}
 
       <div className="row col-2">
         <ChartCard title="Price variance impact" subtitle="Invoice amount split by variance direction" height="auto">

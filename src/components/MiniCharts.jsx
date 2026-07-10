@@ -26,7 +26,7 @@ export function AreaChart({ points = [30, 45, 38, 55, 48, 62, 58, 72, 66, 80, 74
 // X-axis tick labels. `series` is [{ label, color, data: number[] }] (all the
 // same length); `labels` are the X-axis ticks; `formatY` formats axis values.
 export function MultiLineChart({ series = [], labels = [], id = 'ml', formatY = (v) => v, ticks = 4 }) {
-  const all = series.flatMap((s) => s.data);
+  const all = series.flatMap((s) => s.data).filter((v) => v != null && !Number.isNaN(Number(v)));
   if (!all.length) return null;
 
   const w = 620;
@@ -43,7 +43,7 @@ export function MultiLineChart({ series = [], labels = [], id = 'ml', formatY = 
   const max = rawMax + span * 0.12;
   const range = max - min || 1;
 
-  const n = series[0].data.length;
+  const n = Math.max(labels.length, ...series.map((s) => s.data.length), 1);
   const plotW = w - mL - mR;
   const plotH = h - mT - mB;
   const stepX = plotW / (n - 1 || 1);
@@ -51,6 +51,24 @@ export function MultiLineChart({ series = [], labels = [], id = 'ml', formatY = 
   const y = (v) => mT + (1 - (v - min) / range) * plotH;
 
   const tickVals = Array.from({ length: ticks + 1 }, (_, k) => min + (range * k) / ticks);
+
+  // Build polyline segments that skip null gaps (missing dates).
+  const linePaths = (data) => {
+    const paths = [];
+    let current = [];
+    data.forEach((v, i) => {
+      if (v == null || Number.isNaN(Number(v))) {
+        if (current.length) {
+          paths.push(current);
+          current = [];
+        }
+        return;
+      }
+      current.push(`${x(i)},${y(Number(v))}`);
+    });
+    if (current.length) paths.push(current);
+    return paths;
+  };
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', display: 'block' }} role="img">
@@ -70,17 +88,18 @@ export function MultiLineChart({ series = [], labels = [], id = 'ml', formatY = 
           {lb}
         </text>
       ))}
-      {series.map((s) => {
-        const pts = s.data.map((v, i) => `${x(i)},${y(v)}`).join(' ');
-        return (
-          <g key={s.label}>
-            <polyline points={pts} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" />
-            {s.data.map((v, i) => (
-              <circle key={i} cx={x(i)} cy={y(v)} r="3" fill={s.color} />
-            ))}
-          </g>
-        );
-      })}
+      {series.map((s) => (
+        <g key={s.label}>
+          {linePaths(s.data).map((pts, pi) => (
+            <polyline key={pi} points={pts.join(' ')} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" />
+          ))}
+          {s.data.map((v, i) =>
+            v == null || Number.isNaN(Number(v)) ? null : (
+              <circle key={i} cx={x(i)} cy={y(Number(v))} r="3" fill={s.color} />
+            )
+          )}
+        </g>
+      ))}
     </svg>
   );
 }

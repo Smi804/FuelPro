@@ -217,7 +217,7 @@ export default function DataTable({
           <thead>
             <tr>
               {selectable && (
-                <th style={{ width: 32 }}>
+                <th style={{ width: 32, color: '#000', fontWeight: 'bold' }}>
                   <input type="checkbox" style={{ margin: 0 }} checked={allOnPageSelected} onChange={toggleAll} aria-label="Select all" />
                 </th>
               )}
@@ -229,14 +229,16 @@ export default function DataTable({
                     cursor: c.sortable === false ? 'default' : 'pointer',
                     userSelect: 'none',
                     textAlign: c.align || 'left',
-                    width: c.width
+                    width: c.width,
+                    fontWeight: 'bold',
+                    color: '#000'
                   }}
                 >
                   {c.label}
                   {sort.key === c.key && <span> {sort.dir === 'asc' ? '↑' : '↓'}</span>}
                 </th>
               ))}
-              {rowActions && <th style={{ width: 40 }} />}
+              {rowActions && <th style={{ width: 40, color: '#000' }} />}
             </tr>
           </thead>
           <tbody>

@@ -125,11 +125,11 @@ export default function App() {
         <Route path="/fuel/inventory" element={guard('fuel_inventory:view', <FuelInventoryOverview />)} />
         <Route path="/fuel/inventory/reports" element={guard('fuel_inventory:view', <FuelInventoryReports />)} />
         <Route path="/fuel/inventory/settings" element={guard('fuel_inventory:view', <FuelInventorySettings />)} />
-        <Route path="/fuel/inventory/purchasing/invoices" element={guard('purchase_invoices:view', <PurchaseInvoices />)} />
-        <Route path="/fuel/inventory/purchasing/audits" element={guard('fuel_audits:view', <FuelAudits />)} />
-        <Route path="/fuel/inventory/purchasing/audit-config" element={guard('fuel_audit_config:view', <FuelAuditConfig />)} />
-        <Route path="/fuel/inventory/purchasing/invoice-entry" element={guard('invoice_entry_service:view', <InvoiceEntryService />)} />
-        <Route path="/fuel/inventory/purchasing/daily-quotations" element={guard('daily_quotations:view', <DailyQuotations />)} />
+        <Route path="/fuel/inventory/invoices" element={guard('purchase_invoices:view', <PurchaseInvoices />)} />
+        <Route path="/fuel/inventory/audits" element={guard('fuel_audits:view', <FuelAudits />)} />
+        <Route path="/fuel/inventory/audit-config" element={guard('fuel_audit_config:view', <FuelAuditConfig />)} />
+        <Route path="/fuel/inventory/invoice-entry" element={guard('invoice_entry_service:view', <InvoiceEntryService />)} />
+        <Route path="/fuel/inventory/daily-quotations" element={guard('daily_quotations:view', <DailyQuotations />)} />
       </Route>
 
       <Route path="/login" element={<Login />} />

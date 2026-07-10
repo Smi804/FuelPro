@@ -24,7 +24,7 @@ export default function FuelInventoryReports() {
   return (
     <div className="page-wrapper">
       <PageHeader
-        pretitle="Fuel · Inventory"
+        pretitle="Fuel  Inventory"
         title="Reports"
         actions={
           <Can perm="fuel_inventory:export">

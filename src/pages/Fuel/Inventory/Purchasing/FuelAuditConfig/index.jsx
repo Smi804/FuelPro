@@ -62,7 +62,7 @@ export default function FuelAuditConfig() {
 
   return (
     <div className="page-wrapper">
-      <PageHeader pretitle="Fuel · Purchasing" title="Fuel Audit Config" />
+      <PageHeader pretitle="Fuel  " title="Fuel Audit Config" />
       <form className="card" style={{ maxWidth: 620 }} onSubmit={save}>
         <div className="card-header"><div className="card-title">Audit thresholds & rules</div></div>
         <div className="card-body">

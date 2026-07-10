@@ -58,7 +58,7 @@ hides items the role can't view. The permission matrix is in
 | `/reports/sales` `…/inventory` `…/expenses` `…/profit` `…/shifts` | Reports |
 | `/fuel/atg` `…/sales` `…/pricing` | Fuel ops |
 | `/fuel/inventory` `…/reports` `…/settings` | Fuel inventory |
-| `/fuel/inventory/purchasing/invoices` `…/audits` `…/audit-config` `…/invoice-entry` | Purchasing & audits |
+| `/fuel/inventory/invoices` `…/audits` `…/audit-config` `…/invoice-entry` | Purchasing & audits |
 | `/notifications` | Notifications |
 | `/users` `/users/roles` `/users/permissions` | User management |
 | `/settings`, `/audit-logs` | Settings, audit logs |
